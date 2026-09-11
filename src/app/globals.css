@@ -1,26 +1,147 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens. Dark is the flagship look here (an enchanting-table glow —
+ * deep indigo-black with a violet/cyan accent), light is a clean fallback
+ * for whoever's system is set to it. Rarity colors mirror Minecraft's own
+ * item-rarity language (common/uncommon/rare/epic) mapped from each
+ * enchantment's table weight (10/5/2/1) — see src/lib/enchantments.ts.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f6f5f3;
+  --background-glow: radial-gradient(1200px 600px at 50% -10%, rgba(139, 92, 246, 0.08), transparent);
+  --foreground: #18181b;
+  --muted: #6b6b76;
+  --surface: #ffffff;
+  --surface-border: rgba(24, 24, 27, 0.1);
+  --surface-raised: #fbfbfa;
+
+  --accent-from: #7c3aed;
+  --accent-via: #a855f7;
+  --accent-to: #22d3ee;
+  --accent-solid: #7c3aed;
+  --accent-contrast: #ffffff;
+
+  --rarity-common: #9a9a9a;
+  --rarity-uncommon: #3fae4a;
+  --rarity-rare: #29a8d1;
+  --rarity-epic: #b24bf3;
+
+  --status-add-bg: rgba(34, 197, 94, 0.14);
+  --status-add-fg: #1c8a4b;
+  --status-upgrade-bg: rgba(245, 158, 11, 0.16);
+  --status-upgrade-fg: #a5670a;
+  --status-neutral-bg: rgba(24, 24, 27, 0.06);
+  --status-neutral-fg: #6b6b76;
+  --status-conflict-bg: rgba(239, 68, 68, 0.14);
+  --status-conflict-fg: #b91c1c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0912;
+    --background-glow: radial-gradient(1100px 560px at 50% -8%, rgba(124, 58, 237, 0.22), transparent),
+      radial-gradient(900px 480px at 90% 8%, rgba(34, 211, 238, 0.08), transparent);
+    --foreground: #f1eef9;
+    --muted: #a5a0bd;
+    --surface: #14121f;
+    --surface-border: rgba(196, 181, 253, 0.14);
+    --surface-raised: #1a1729;
+
+    --accent-from: #a855f7;
+    --accent-via: #818cf8;
+    --accent-to: #22d3ee;
+    --accent-solid: #a855f7;
+    --accent-contrast: #0a0912;
+
+    --rarity-common: #b7b3c9;
+    --rarity-uncommon: #4ade80;
+    --rarity-rare: #38bdf8;
+    --rarity-epic: #e879f9;
+
+    --status-add-bg: rgba(74, 222, 128, 0.14);
+    --status-add-fg: #6ee7a0;
+    --status-upgrade-bg: rgba(251, 191, 36, 0.16);
+    --status-upgrade-fg: #fbbf47;
+    --status-neutral-bg: rgba(196, 181, 253, 0.08);
+    --status-neutral-fg: #a5a0bd;
+    --status-conflict-bg: rgba(248, 113, 113, 0.16);
+    --status-conflict-fg: #fca5a5;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-display: var(--font-display);
 }
 
 body {
-  background: var(--background);
+  background: var(--background-glow), var(--background);
+  background-attachment: fixed;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: 0.01em;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 0.9rem;
+}
+
+.panel-raised {
+  background: var(--surface-raised);
+}
+
+/* Enchanted-item shimmer — a diagonal band of light sweeping across the
+   element, like the glint on an enchanted Minecraft item. Used sparingly:
+   the primary CTA and the #1 ranked result. */
+@keyframes glint-sweep {
+  0% {
+    transform: translateX(-150%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(250%) skewX(-20deg);
+  }
+}
+
+.glint {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.glint::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  animation: glint-sweep 2.8s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.accent-gradient {
+  background-image: linear-gradient(135deg, var(--accent-from), var(--accent-via), var(--accent-to));
+}
+
+.accent-text {
+  background-image: linear-gradient(135deg, var(--accent-from), var(--accent-via), var(--accent-to));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent-solid) 35%, transparent);
 }

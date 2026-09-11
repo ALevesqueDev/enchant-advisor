@@ -5,6 +5,7 @@ import { ITEM_CATEGORY_LABELS, enchantmentById, enchantmentsFor } from "@/lib/en
 import { GOALS } from "@/lib/goals";
 import { recommend, untouchedCurrentEnchants } from "@/lib/recommend";
 import { planAnvilCombines } from "@/lib/anvil";
+import { CATEGORY_ICON, RARITY_LABELS, RARITY_VAR, rarityFromWeight } from "@/lib/presentation";
 import type { EnchantSet, ItemCategory } from "@/lib/types";
 import SearchMode from "./SearchMode";
 
@@ -18,11 +19,33 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_STYLE: Record<string, string> = {
-  add: "bg-emerald-600/15 text-emerald-700 dark:text-emerald-400",
-  upgrade: "bg-amber-600/15 text-amber-700 dark:text-amber-400",
-  "already-optimal": "bg-black/5 dark:bg-white/10 text-black/60 dark:text-white/60",
-  conflict: "bg-red-600/15 text-red-700 dark:text-red-400",
+  add: "bg-[var(--status-add-bg)] text-[var(--status-add-fg)]",
+  upgrade: "bg-[var(--status-upgrade-bg)] text-[var(--status-upgrade-fg)]",
+  "already-optimal": "bg-[var(--status-neutral-bg)] text-[var(--status-neutral-fg)]",
+  conflict: "bg-[var(--status-conflict-bg)] text-[var(--status-conflict-fg)]",
 };
+
+function SectionLabel({ index, children }: { index: string; children: React.ReactNode }) {
+  return (
+    <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+      <span className="accent-gradient flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white">
+        {index}
+      </span>
+      {children}
+    </h2>
+  );
+}
+
+function RarityDot({ weight }: { weight: number }) {
+  const rarity = rarityFromWeight(weight);
+  return (
+    <span
+      title={RARITY_LABELS[rarity]}
+      className="inline-block h-2 w-2 shrink-0 rounded-full"
+      style={{ background: `var(${RARITY_VAR[rarity]})`, boxShadow: `0 0 6px var(${RARITY_VAR[rarity]})` }}
+    />
+  );
+}
 
 export default function Home() {
   const [mode, setMode] = useState<"advisor" | "search">("advisor");
@@ -58,26 +81,33 @@ export default function Home() {
   const anvilPlan = useMemo(() => planAnvilCombines(anvilTargets), [anvilTargets]);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-semibold">Enchant Advisor</h1>
-      <p className="mt-1 text-sm text-black/60 dark:text-white/60">
-        Item + tier + enchantements déjà présents + objectif → ce qu&apos;il faut ajouter, et le coût d&apos;enclume.
-        Minecraft Java Edition uniquement.
-      </p>
+    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+      {/* Hero */}
+      <div className="text-center sm:text-left">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--surface-border)] bg-[var(--surface)] px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-muted">
+          ✦ Minecraft Java Edition
+        </span>
+        <h1 className="font-display accent-text mt-4 text-4xl font-bold sm:text-5xl">Enchant Advisor</h1>
+        <p className="mt-2 max-w-xl text-sm text-muted sm:text-base">
+          Ton objet, ce qui est déjà enchanté dessus, et ton objectif — on te dit quoi ajouter, et ce que ça va
+          coûter à l&apos;enclume.
+        </p>
+      </div>
 
-      <div className="mt-6 flex gap-2 border-b border-black/10 dark:border-white/15">
+      {/* Mode toggle */}
+      <div className="panel mt-8 inline-flex gap-1 p-1">
         <button
           onClick={() => setMode("advisor")}
-          className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px ${
-            mode === "advisor" ? "border-foreground" : "border-transparent text-black/50 dark:text-white/50"
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+            mode === "advisor" ? "accent-gradient text-white shadow-sm" : "text-muted hover:text-foreground"
           }`}
         >
           Conseiller
         </button>
         <button
           onClick={() => setMode("search")}
-          className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px ${
-            mode === "search" ? "border-foreground" : "border-transparent text-black/50 dark:text-white/50"
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+            mode === "search" ? "accent-gradient text-white shadow-sm" : "text-muted hover:text-foreground"
           }`}
         >
           Recherche d&apos;enchantement
@@ -88,157 +118,165 @@ export default function Home() {
 
       {mode === "advisor" && (
         <>
-      {/* Step 1: item */}
-      <section className="mt-8">
-        <h2 className="text-sm font-medium text-black/60 dark:text-white/60">1. Objet</h2>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c}
-              onClick={() => changeCategory(c)}
-              className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                c === category
-                  ? "border-transparent bg-foreground text-background"
-                  : "border-black/10 dark:border-white/15 hover:bg-black/5 dark:hover:bg-white/10"
-              }`}
-            >
-              {ITEM_CATEGORY_LABELS[c]}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Step 2: current enchants */}
-      <section className="mt-8">
-        <h2 className="text-sm font-medium text-black/60 dark:text-white/60">
-          2. Enchantements déjà sur l&apos;objet
-        </h2>
-        <div className="mt-2 divide-y divide-black/10 dark:divide-white/10 rounded-lg border border-black/10 dark:border-white/15">
-          {applicable.map((e) => (
-            <div key={e.id} className="flex items-center justify-between gap-4 px-3 py-2">
-              <span className="text-sm">
-                {e.name}
-                {e.treasureOnly && (
-                  <span className="ml-1.5 text-xs text-black/40 dark:text-white/40">(trésor)</span>
-                )}
-              </span>
-              <select
-                value={current[e.id] ?? 0}
-                onChange={(ev) => setLevel(e.id, Number(ev.target.value))}
-                className="rounded border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-sm"
-              >
-                <option value={0}>—</option>
-                {Array.from({ length: e.maxLevel }, (_, i) => i + 1).map((lvl) => (
-                  <option key={lvl} value={lvl}>
-                    Niveau {lvl}
-                  </option>
-                ))}
-              </select>
+          {/* Step 1: item */}
+          <section className="mt-10">
+            <SectionLabel index="1">Objet</SectionLabel>
+            <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {CATEGORIES.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => changeCategory(c)}
+                  className={`panel flex flex-col items-center gap-1 px-2 py-3 text-xs font-medium transition-all hover:-translate-y-0.5 ${
+                    c === category ? "ring-2 ring-[var(--accent-solid)]" : ""
+                  }`}
+                >
+                  <span className="text-xl">{CATEGORY_ICON[c]}</span>
+                  {ITEM_CATEGORY_LABELS[c]}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          </section>
 
-      {/* Step 3: goal */}
-      <section className="mt-8">
-        <h2 className="text-sm font-medium text-black/60 dark:text-white/60">3. Objectif</h2>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {goals.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => setGoalId(g.id)}
-              className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                g.id === goal.id
-                  ? "border-transparent bg-foreground text-background"
-                  : "border-black/10 dark:border-white/15 hover:bg-black/5 dark:hover:bg-white/10"
-              }`}
-            >
-              {g.label}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Recommendations */}
-      <section className="mt-8">
-        <h2 className="text-sm font-medium text-black/60 dark:text-white/60">Recommandation</h2>
-        <div className="mt-2 divide-y divide-black/10 dark:divide-white/10 rounded-lg border border-black/10 dark:border-white/15">
-          {recommendations.map((r) => {
-            const e = enchantmentById(r.enchantId);
-            return (
-              <div key={r.enchantId} className="flex items-center justify-between gap-4 px-3 py-2.5">
-                <div>
-                  <div className="text-sm font-medium">{e.name}</div>
-                  <div className="text-xs text-black/50 dark:text-white/50">
-                    {r.status === "conflict"
-                      ? `Bloqué par ${enchantmentById(r.conflictsWith!).name} déjà sur l'objet`
-                      : `${r.currentLevel > 0 ? `Niveau ${r.currentLevel} → ` : ""}Niveau ${r.targetLevel} visé`}
-                  </div>
+          {/* Step 2: current enchants */}
+          <section className="mt-10">
+            <SectionLabel index="2">Enchantements déjà sur l&apos;objet</SectionLabel>
+            <div className="panel mt-3 divide-y divide-[var(--surface-border)]">
+              {applicable.map((e) => (
+                <div key={e.id} className="flex items-center justify-between gap-4 px-4 py-2.5">
+                  <span className="flex items-center gap-2 text-sm">
+                    <RarityDot weight={e.weight} />
+                    {e.name}
+                    {e.treasureOnly && <span className="text-xs text-muted">(trésor)</span>}
+                  </span>
+                  <select
+                    value={current[e.id] ?? 0}
+                    onChange={(ev) => setLevel(e.id, Number(ev.target.value))}
+                    className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-raised)] px-2 py-1 text-sm"
+                  >
+                    <option value={0}>—</option>
+                    {Array.from({ length: e.maxLevel }, (_, i) => i + 1).map((lvl) => (
+                      <option key={lvl} value={lvl}>
+                        Niveau {lvl}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <span className={`shrink-0 rounded px-2 py-1 text-xs font-medium ${STATUS_STYLE[r.status]}`}>
-                  {STATUS_LABEL[r.status]}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-        {untouched.length > 0 && (
-          <p className="mt-2 text-xs text-black/50 dark:text-white/50">
-            Conservés sans impact sur cet objectif : {untouched.map((id) => enchantmentById(id).name).join(", ")}.
-          </p>
-        )}
-      </section>
+              ))}
+            </div>
+          </section>
 
-      {/* Anvil plan */}
-      {anvilPlan.steps.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-sm font-medium text-black/60 dark:text-white/60">Coût d&apos;enclume</h2>
-          <p className="mt-1 text-xs text-black/50 dark:text-white/50">
-            En supposant chaque enchantement appliqué via un livre neuf, séparément. Le total ne dépend pas de
-            l&apos;ordre — seul le nombre d&apos;opérations précédentes sur l&apos;objet compte pour la pénalité.
-          </p>
-          <div className="mt-2 overflow-x-auto rounded-lg border border-black/10 dark:border-white/15">
-            <table className="w-full min-w-[420px] text-sm">
-              <thead className="bg-black/5 dark:bg-white/10 text-left">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Étape</th>
-                  <th className="px-3 py-2 font-medium">Enchantement</th>
-                  <th className="px-3 py-2 font-medium text-right">Pénalité</th>
-                  <th className="px-3 py-2 font-medium text-right">Coût</th>
-                  <th className="px-3 py-2 font-medium text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black/10 dark:divide-white/10">
-                {anvilPlan.steps.map((s, i) => (
-                  <tr key={s.enchantId} className={s.tooExpensive ? "bg-red-600/10" : undefined}>
-                    <td className="px-3 py-2">{i + 1}</td>
-                    <td className="px-3 py-2">
-                      {enchantmentById(s.enchantId).name} {s.level}
-                    </td>
-                    <td className="px-3 py-2 text-right">{s.priorWorkPenalty}</td>
-                    <td className="px-3 py-2 text-right">
-                      {s.stepCost} {s.tooExpensive && "⚠"}
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      {anvilPlan.steps.slice(0, i + 1).reduce((sum, x) => sum + x.stepCost, 0)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-2 text-sm">
-            <strong>{anvilPlan.totalCost}</strong> niveaux d&apos;XP au total.
-          </p>
-          {anvilPlan.anyTooExpensive && (
-            <p className="mt-1 text-sm text-red-700 dark:text-red-400">
-              ⚠ Au moins une étape dépasse 39 niveaux — l&apos;enclume refusera l&apos;opération (&quot;Too
-              Expensive!&quot;) en survie/aventure. Retire un objectif de moindre priorité, ou termine ce combo en
-              mode créatif.
-            </p>
+          {/* Step 3: goal */}
+          <section className="mt-10">
+            <SectionLabel index="3">Objectif</SectionLabel>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {goals.map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => setGoalId(g.id)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                    g.id === goal.id
+                      ? "accent-gradient text-white shadow-sm"
+                      : "panel text-muted hover:text-foreground"
+                  }`}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* Recommendations */}
+          <section className="mt-10">
+            <SectionLabel index="4">Recommandation</SectionLabel>
+            <div className="panel mt-3 divide-y divide-[var(--surface-border)]">
+              {recommendations.map((r) => {
+                const e = enchantmentById(r.enchantId);
+                return (
+                  <div key={r.enchantId} className="flex items-center justify-between gap-4 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <RarityDot weight={e.weight} />
+                      <div>
+                        <div className="text-sm font-medium">{e.name}</div>
+                        <div className="text-xs text-muted">
+                          {r.status === "conflict"
+                            ? `Bloqué par ${enchantmentById(r.conflictsWith!).name} déjà sur l'objet`
+                            : `${r.currentLevel > 0 ? `Niveau ${r.currentLevel} → ` : ""}Niveau ${r.targetLevel} visé`}
+                        </div>
+                      </div>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[r.status]}`}>
+                      {STATUS_LABEL[r.status]}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            {untouched.length > 0 && (
+              <p className="mt-2 text-xs text-muted">
+                Conservés sans impact sur cet objectif : {untouched.map((id) => enchantmentById(id).name).join(", ")}.
+              </p>
+            )}
+          </section>
+
+          {/* Anvil plan */}
+          {anvilPlan.steps.length > 0 && (
+            <section className="mt-10">
+              <SectionLabel index="5">Coût d&apos;enclume</SectionLabel>
+              <p className="mt-2 text-xs text-muted">
+                En supposant chaque enchantement appliqué via un livre neuf, séparément. Le total ne dépend pas de
+                l&apos;ordre — seul le nombre d&apos;opérations précédentes sur l&apos;objet compte pour la pénalité.
+              </p>
+
+              <div className="panel mt-3 overflow-x-auto">
+                <table className="w-full min-w-[420px] text-sm">
+                  <thead className="text-left text-xs uppercase tracking-wide text-muted">
+                    <tr className="border-b border-[var(--surface-border)]">
+                      <th className="px-4 py-2.5 font-medium">Étape</th>
+                      <th className="px-4 py-2.5 font-medium">Enchantement</th>
+                      <th className="px-4 py-2.5 font-medium text-right">Pénalité</th>
+                      <th className="px-4 py-2.5 font-medium text-right">Coût</th>
+                      <th className="px-4 py-2.5 font-medium text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--surface-border)]">
+                    {anvilPlan.steps.map((s, i) => (
+                      <tr key={s.enchantId} className={s.tooExpensive ? "bg-[var(--status-conflict-bg)]" : undefined}>
+                        <td className="px-4 py-2.5 text-muted">{i + 1}</td>
+                        <td className="px-4 py-2.5">
+                          {enchantmentById(s.enchantId).name} {s.level}
+                        </td>
+                        <td className="px-4 py-2.5 text-right text-muted">{s.priorWorkPenalty}</td>
+                        <td className="px-4 py-2.5 text-right">
+                          {s.stepCost} {s.tooExpensive && "⚠"}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-medium">
+                          {anvilPlan.steps.slice(0, i + 1).reduce((sum, x) => sum + x.stepCost, 0)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="panel mt-3 flex items-center gap-3 px-4 py-3">
+                <span className="accent-gradient flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white">
+                  XP
+                </span>
+                <p className="text-sm">
+                  <strong className="font-display text-base">{anvilPlan.totalCost}</strong> niveaux d&apos;XP au
+                  total.
+                </p>
+              </div>
+
+              {anvilPlan.anyTooExpensive && (
+                <p className="mt-2 text-sm" style={{ color: "var(--status-conflict-fg)" }}>
+                  ⚠ Au moins une étape dépasse 39 niveaux — l&apos;enclume refusera l&apos;opération (&quot;Too
+                  Expensive!&quot;) en survie/aventure. Retire un objectif de moindre priorité, ou termine ce combo
+                  en mode créatif.
+                </p>
+              )}
+            </section>
           )}
-        </section>
-      )}
         </>
       )}
     </div>

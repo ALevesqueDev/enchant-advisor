@@ -6,6 +6,7 @@ import { GOALS } from "@/lib/goals";
 import { recommend, untouchedCurrentEnchants } from "@/lib/recommend";
 import { planAnvilCombines } from "@/lib/anvil";
 import type { EnchantSet, ItemCategory } from "@/lib/types";
+import SearchMode from "./SearchMode";
 
 const CATEGORIES = Object.keys(ITEM_CATEGORY_LABELS) as ItemCategory[];
 
@@ -24,6 +25,7 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 export default function Home() {
+  const [mode, setMode] = useState<"advisor" | "search">("advisor");
   const [category, setCategory] = useState<ItemCategory>("pickaxe");
   const [current, setCurrent] = useState<EnchantSet>({});
   const [goalId, setGoalId] = useState<string>(GOALS["pickaxe"][0].id);
@@ -63,6 +65,29 @@ export default function Home() {
         Minecraft Java Edition uniquement.
       </p>
 
+      <div className="mt-6 flex gap-2 border-b border-black/10 dark:border-white/15">
+        <button
+          onClick={() => setMode("advisor")}
+          className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px ${
+            mode === "advisor" ? "border-foreground" : "border-transparent text-black/50 dark:text-white/50"
+          }`}
+        >
+          Conseiller
+        </button>
+        <button
+          onClick={() => setMode("search")}
+          className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px ${
+            mode === "search" ? "border-foreground" : "border-transparent text-black/50 dark:text-white/50"
+          }`}
+        >
+          Recherche d&apos;enchantement
+        </button>
+      </div>
+
+      {mode === "search" && <SearchMode />}
+
+      {mode === "advisor" && (
+        <>
       {/* Step 1: item */}
       <section className="mt-8">
         <h2 className="text-sm font-medium text-black/60 dark:text-white/60">1. Objet</h2>
@@ -213,6 +238,8 @@ export default function Home() {
             </p>
           )}
         </section>
+      )}
+        </>
       )}
     </div>
   );

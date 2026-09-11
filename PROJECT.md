@@ -68,11 +68,29 @@ See `src/lib/goals.ts` for the live table.
 
 ## Status
 
-**MVP built and working**: Next.js + TypeScript + Tailwind, fully
-client-side. Item picker → current-enchants input → goal picker →
-recommendation + anvil cost, covering all 16 item categories. Data verified
-against the Minecraft Wiki on 2026-09-11 (see `src/lib/enchantments.ts` and
-`src/lib/anvil.ts` headers for sources and caveats). `npm run build` and
-`npm run lint` both pass clean.
+**MVP built and working**, two modes:
 
-Repo: https://github.com/ALevesqueDev/enchant-advisor (private)
+1. **Conseiller** — item picker → current-enchants input → goal picker →
+   recommendation + anvil cost, covering all 16 item categories.
+2. **Recherche d'enchantement** — pick a target enchantment + level; for
+   non-treasure enchants, Monte-Carlo simulation of the real enchanting-table
+   algorithm sweeps every material × level 1-30 to find the best odds
+   (`src/lib/tableOdds.ts`); for treasure enchants (Mending, Frost Walker,
+   the curses), it correctly reports the table can never produce them and
+   instead computes fishing and villager-trading odds
+   (`src/lib/treasure.ts`) — Soul Speed, Swift Sneak, Riptide, and
+   Channeling are flagged as structure-loot-only since neither fishing nor
+   trading can produce them.
+
+**Data was re-verified mid-project against the actual generated game data**
+(github.com/misode/mcmeta) after a wiki-summary fetch turned out to have
+fabricated an enchantment ("Cleaving") that doesn't exist in the real game
+registry — a good example of why `src/lib/*.ts` headers cite raw JSON
+sources over wiki prose wherever the raw data was reachable. Also discovered
+mid-project, confirmed against the same raw data rather than dismissed:
+Copper tools/armor and the Spear weapon (with its Lunge enchantment) both
+exist in the current game, past this assistant's Jan 2026 training cutoff.
+
+`npm run build` and `npm run lint` both pass clean.
+
+Repo: https://github.com/ALevesqueDev/enchant-advisor (private, `dev` branch)

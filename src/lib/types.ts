@@ -22,6 +22,12 @@ export type ItemCategory =
   | "fishing_rod"
   | "elytra";
 
+/** A linear cost formula: value(level) = base + perLevelAboveFirst * (level - 1). */
+export interface LinearCost {
+  base: number;
+  perLevelAboveFirst: number;
+}
+
 export interface Enchantment {
   id: string;
   name: string;
@@ -31,11 +37,13 @@ export interface Enchantment {
   categories: ItemCategory[];
   /** Enchantment ids this one cannot coexist with on the same item. */
   incompatibleWith: string[];
-  /**
-   * Anvil cost multiplier per resulting level — see docs/anvil-mechanics.md.
-   * Different depending on whether the enchantment source is a book or the item itself.
-   */
-  multiplier: { book: number; item: number };
+  /** Anvil cost per resulting level when applied from a book; combining two enchanted items costs double. */
+  anvilCost: number;
+  /** Rarity weight used by the enchanting table's weighted random pick — higher = more common. */
+  weight: number;
+  /** Enchanting-table/loot "power" range an item's effective roll must fall within to offer this level. */
+  minCost: LinearCost;
+  maxCost: LinearCost;
 }
 
 /** What the player already has on the item: enchantment id -> current level. */

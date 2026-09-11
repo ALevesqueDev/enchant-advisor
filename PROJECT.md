@@ -27,26 +27,25 @@ combine-order/cost calculator.
    - combine cost = sum of book/item level costs + penalties
    - the 39-level "Too Expensive!" survival cap (creative has none)
 
-## Goal taxonomy (draft — first pass from Java wiki knowledge, not yet reviewed)
+## Goal taxonomy (approved, then corrected during implementation)
 
-| Item | Goals |
-|---|---|
-| Pickaxe | Mining (ressources/vitesse), Silk Touch (déco/verre/glace) |
-| Axe | Bûcheronnage, Combat (les haches sont une arme viable en Java) |
-| Sword | PvP, Farm de mobs (Looting), Zone/foule (Sweeping Edge) |
-| Bow | PvP, Farm de mobs (Infinity+Power vs consommation de flèches) |
-| Crossbow | PvP (Piercing), Volée de feu d'artifice (Multishot+Quick Charge) |
-| Trident | Mêlée, Riptide (déplacement/pluie), Loyalty (lancer) — Riptide et Loyalty/Channeling s'excluent |
-| Helmet | Survie générale, Sous l'eau (Respiration/Aqua Affinity), Mineur (pas de casque spécifique mais Respiration utile en grotte noyée) |
-| Chestplate | Survie générale, PvP |
-| Leggings | Survie générale, PvP |
-| Boots | Survie générale, Chute (Feather Falling), Mobilité (Depth Strider vs Frost Walker — s'excluent), Discrétion (Soul Speed sur âme sable) |
-| Shield | Survie générale (Unbreaking/Mending only — pas grand-chose d'autre) |
-| Fishing Rod | Pêche efficace (Lure), Butin (Luck of the Sea) |
-| Elytra | Survie générale (Unbreaking/Mending) |
+Approved as drafted, then fixed against `src/lib/goals.ts` (now the source
+of truth — see the file header there for the full rationale):
 
-Needs a real pass to confirm this matches actual player mental models before
-coding it — this is my first draft, not verified against user needs.
+- **Fixed:** boots' "Discrétion" was wrongly attached to Soul Speed (which
+  is a movement-speed enchant, not stealth). Swift Sneak — the actual
+  stealth enchant — lives on **leggings**, not boots. Boots' Soul Speed goal
+  is now correctly labeled "Vitesse sur sable des âmes".
+- **Split:** boots' "Mobilité" became two goals (Depth Strider vs Frost
+  Walker) since they're mutually exclusive — bundling them made no sense.
+- **Added:** Shovel, Hoe, Mace, and Spear (the last two didn't exist in the
+  first draft's scope). Spear/Lunge were added to the game in 1.21.11
+  (Sept 2026), after this assistant's training cutoff — see the
+  `enchantments.ts` header for what's verified vs. best-guess there.
+- **Axe woodcutting excludes Fortune** even though the game allows it —
+  wood always drops 1:1, so it does nothing for that goal.
+
+See `src/lib/goals.ts` for the live table.
 
 ## Anvil rules reference
 
@@ -58,14 +57,22 @@ coding it — this is my first draft, not verified against user needs.
 
 ## Not yet decided
 
-- Tech stack (nothing scaffolded yet)
-- Exact UI flow (item picker → enchant picker → goal picker → result, or
-  fewer/more steps)
 - Whether to persist anything (accounts, saved builds) or keep it fully
-  stateless/client-side
+  stateless/client-side — currently fully stateless, no backend
 - Name (this is a placeholder working title)
+- The anvil calculator only models "each enchant via one fresh book" — it
+  doesn't yet handle pre-combining two lower-level books to reach a higher
+  level before touching the final item, which is where combine *order*
+  actually starts to matter (see `src/lib/anvil.ts` header)
+- Deployment (not yet live anywhere — runs locally via `npm run dev`)
 
 ## Status
 
-Idea captured, competitive research done (see README.md), goal taxonomy
-drafted. **Nothing built.** Next step is your call — see chat.
+**MVP built and working**: Next.js + TypeScript + Tailwind, fully
+client-side. Item picker → current-enchants input → goal picker →
+recommendation + anvil cost, covering all 16 item categories. Data verified
+against the Minecraft Wiki on 2026-09-11 (see `src/lib/enchantments.ts` and
+`src/lib/anvil.ts` headers for sources and caveats). `npm run build` and
+`npm run lint` both pass clean.
+
+Repo: https://github.com/ALevesqueDev/enchant-advisor (private)

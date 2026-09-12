@@ -31,6 +31,10 @@ export default function CopyLinkButton({ locale }: { locale: Locale }) {
       // without needing focus to move — otherwise the only feedback is the
       // visible text swap, which a screen reader user wouldn't get at all.
       aria-live="polite"
+      // title covers hover-capable devices; page.tsx also prints a short
+      // caption right under this button for everyone else, since "Copy
+      // link" alone doesn't say what makes this link worth copying.
+      title={t("shareCopyLinkHint", locale)}
       className="panel rounded-full px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:text-foreground"
     >
       {copied ? t("shareCopied", locale) : t("shareCopyLink", locale)}

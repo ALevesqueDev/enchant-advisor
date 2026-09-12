@@ -119,6 +119,10 @@ const UI = {
   },
   shareCopyLink: { en: "🔗 Copy link", fr: "🔗 Copier le lien" },
   shareCopied: { en: "✓ Link copied!", fr: "✓ Lien copié !" },
+  shareCopyLinkHint: {
+    en: "Keeps your current selection — paste it anywhere to share exactly this.",
+    fr: "Garde ta sélection actuelle — colle-le n'importe où pour partager exactement ça.",
+  },
 
   notFoundTitle: { en: "Page not found", fr: "Page introuvable" },
   notFoundBody: {

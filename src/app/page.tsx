@@ -200,9 +200,15 @@ export default function Home() {
           <h1 className="font-display accent-text mt-4 text-4xl font-bold sm:text-5xl">Enchant Advisor</h1>
           <p className="mt-2 max-w-xl text-sm text-muted sm:text-base">{t("heroTagline", locale)}</p>
         </div>
-        <div className="no-print flex justify-center gap-2 sm:justify-end">
-          <CopyLinkButton locale={locale} />
-          <LocaleToggle locale={locale} setLocale={setLocale} />
+        <div className="no-print flex flex-col items-center gap-1.5 sm:items-end">
+          <div className="flex gap-2">
+            <CopyLinkButton locale={locale} />
+            <LocaleToggle locale={locale} setLocale={setLocale} />
+          </div>
+          {/* "Copy link" alone doesn't say what's worth copying about it — the title attribute covers hover, this covers everyone else. */}
+          <p className="max-w-[220px] text-center text-[11px] text-muted sm:text-right">
+            {t("shareCopyLinkHint", locale)}
+          </p>
         </div>
       </div>
 

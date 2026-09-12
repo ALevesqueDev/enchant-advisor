@@ -1,7 +1,7 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
-import { ITEM_CATEGORY_LABELS, enchantmentById, enchantmentsFor } from "@/lib/enchantments";
+import { Fragment, useEffect, useMemo, useReducer, useState } from "react";
+import { enchantmentById, enchantmentsFor } from "@/lib/enchantments";
 import { GOALS } from "@/lib/goals";
 import { recommend, untouchedCurrentEnchants } from "@/lib/recommend";
 import { planAnvilCombines, planBuildUp } from "@/lib/anvil";
@@ -11,20 +11,11 @@ import { materialsFor, type Material } from "@/lib/materials";
 import { t, blockedByNote, levelTargetNote } from "@/lib/strings";
 import { encodeHave, readShareParams, patchShareParams } from "@/lib/shareLink";
 import { useLocale } from "./LocaleContext";
-import type { EnchantSet, ItemCategory } from "@/lib/types";
+import { advisorReducer, initialAdvisorState, CATEGORIES } from "./advisorState";
 import SearchMode from "./SearchMode";
 import Footer from "./Footer";
 import CopyLinkButton from "./CopyLinkButton";
 import OfflineBanner from "./OfflineBanner";
-
-const CATEGORIES = Object.keys(ITEM_CATEGORY_LABELS) as ItemCategory[];
-
-/** Diamond is the sensible default when a category has material variants — most commonly referenced tier. */
-function defaultMaterialFor(category: ItemCategory): Material | undefined {
-  const materials = materialsFor(category);
-  if (materials.length === 0) return undefined;
-  return materials.includes("diamond") ? "diamond" : materials[0];
-}
 
 function SectionLabel({ index, children }: { index: string; children: React.ReactNode }) {
   return (
@@ -77,20 +68,18 @@ function RarityDot({ weight, locale }: { weight: number; locale: Locale }) {
 export default function Home() {
   const { locale, setLocale } = useLocale();
   const [mode, setMode] = useState<"advisor" | "search">("advisor");
-  const [category, setCategory] = useState<ItemCategory>("pickaxe");
-  const [material, setMaterial] = useState<Material | undefined>(defaultMaterialFor("pickaxe"));
-  const [current, setCurrent] = useState<EnchantSet>({});
-  const [goalId, setGoalId] = useState<string>(GOALS["pickaxe"][0].id);
+  const [advisor, dispatch] = useReducer(advisorReducer, initialAdvisorState("pickaxe"));
+  const { category, material, goalId, current } = advisor;
 
   useEffect(() => {
     // One-time hydration from a shared link, same pattern as
     // LocaleContext's localStorage read: SSR/first render always uses the
     // plain defaults above (there's no request-time way to read the URL a
     // static export was pre-rendered for), then this corrects them
-    // client-side once window.location is reachable. Every field is
-    // validated against real categories/materials/goals/enchantments before
-    // being applied — a stale or hand-edited URL just falls back to the
-    // defaults above instead of crashing or showing garbage.
+    // client-side once window.location is reachable. advisorReducer's
+    // HYDRATE case validates every field against real categories/
+    // materials/goals/enchantments — a stale or hand-edited URL just
+    // falls back to the defaults instead of crashing or showing garbage.
     const decoded = readShareParams(new URLSearchParams(window.location.search));
 
     if (decoded.mode) {
@@ -99,28 +88,7 @@ export default function Home() {
     }
     if (decoded.locale && decoded.locale !== locale) setLocale(decoded.locale);
 
-    const a = decoded.advisor;
-    if (a?.category && CATEGORIES.includes(a.category)) {
-      const cat = a.category;
-      setCategory(cat);
-
-      const materials = materialsFor(cat);
-      const mat = a.material && materials.includes(a.material) ? a.material : defaultMaterialFor(cat);
-      setMaterial(mat);
-
-      const goalsForCat = GOALS[cat];
-      const gId = a.goalId && goalsForCat.some((g) => g.id === a.goalId) ? a.goalId : goalsForCat[0].id;
-      setGoalId(gId);
-
-      if (a.current) {
-        const validIds = new Set(enchantmentsFor(cat).map((e) => e.id));
-        const filtered: EnchantSet = {};
-        for (const [id, level] of Object.entries(a.current)) {
-          if (validIds.has(id) && level >= 1 && level <= enchantmentById(id).maxLevel) filtered[id] = level;
-        }
-        setCurrent(filtered);
-      }
-    }
+    dispatch({ type: "HYDRATE", advisor: decoded.advisor });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -161,23 +129,7 @@ export default function Home() {
     conflict: "bg-[var(--status-conflict-bg)] text-[var(--status-conflict-fg)]",
   };
 
-  function changeCategory(next: ItemCategory) {
-    setCategory(next);
-    setMaterial(defaultMaterialFor(next));
-    setCurrent({});
-    setGoalId(GOALS[next][0].id);
-  }
-
   const materialOptions = materialsFor(category);
-
-  function setLevel(enchantId: string, level: number) {
-    setCurrent((prev) => {
-      const next = { ...prev };
-      if (level <= 0) delete next[enchantId];
-      else next[enchantId] = level;
-      return next;
-    });
-  }
 
   const recommendations = useMemo(() => recommend(current, goal), [current, goal]);
   const untouched = useMemo(() => untouchedCurrentEnchants(current, goal), [current, goal]);
@@ -245,7 +197,7 @@ export default function Home() {
               {CATEGORIES.map((c) => (
                 <button
                   key={c}
-                  onClick={() => changeCategory(c)}
+                  onClick={() => dispatch({ type: "CHANGE_CATEGORY", category: c })}
                   aria-pressed={c === category}
                   className={`panel flex flex-col items-center gap-1 px-2 py-3 text-xs font-medium transition-all hover:-translate-y-0.5 ${
                     c === category ? "ring-2 ring-[var(--accent-solid)]" : ""
@@ -267,7 +219,7 @@ export default function Home() {
                 <select
                   id="material-select"
                   value={material}
-                  onChange={(ev) => setMaterial(ev.target.value as Material)}
+                  onChange={(ev) => dispatch({ type: "SET_MATERIAL", material: ev.target.value as Material })}
                   className="mt-1.5 block w-full rounded-md border border-[var(--surface-border)] bg-[var(--surface-raised)] px-2 py-1.5 text-sm sm:w-auto"
                 >
                   {materialOptions.map((m) => (
@@ -298,7 +250,7 @@ export default function Home() {
                   <select
                     id={`current-${e.id}`}
                     value={current[e.id] ?? 0}
-                    onChange={(ev) => setLevel(e.id, Number(ev.target.value))}
+                    onChange={(ev) => dispatch({ type: "SET_LEVEL", enchantId: e.id, level: Number(ev.target.value) })}
                     className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-raised)] px-2 py-1 text-sm"
                   >
                     <option value={0}>{t("noneOption", locale)}</option>
@@ -320,7 +272,7 @@ export default function Home() {
               {goals.map((g) => (
                 <button
                   key={g.id}
-                  onClick={() => setGoalId(g.id)}
+                  onClick={() => dispatch({ type: "SET_GOAL", goalId: g.id })}
                   aria-pressed={g.id === goal.id}
                   className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
                     g.id === goal.id

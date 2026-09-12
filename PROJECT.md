@@ -64,7 +64,6 @@ See `src/lib/goals.ts` for the live table.
   doesn't yet handle pre-combining two lower-level books to reach a higher
   level before touching the final item, which is where combine *order*
   actually starts to matter (see `src/lib/anvil.ts` header)
-- Deployment (not yet live anywhere — runs locally via `npm run dev`)
 
 ## Status
 
@@ -74,13 +73,15 @@ See `src/lib/goals.ts` for the live table.
    recommendation + anvil cost, covering all 16 item categories.
 2. **Recherche d'enchantement** — pick a target enchantment + level; for
    non-treasure enchants, Monte-Carlo simulation of the real enchanting-table
-   algorithm sweeps every material × level 1-30 to find the best odds
-   (`src/lib/tableOdds.ts`); for treasure enchants (Mending, Frost Walker,
-   the curses), it correctly reports the table can never produce them and
-   instead computes fishing and villager-trading odds
-   (`src/lib/treasure.ts`) — Soul Speed, Swift Sneak, Riptide, and
-   Channeling are flagged as structure-loot-only since neither fishing nor
-   trading can produce them.
+   algorithm sweeps every material × table slot (bookshelf-aware, see item 8
+   below) to find the best odds (`src/lib/tableOdds.ts`); for treasure
+   enchants (Mending, Frost Walker, the curses), it correctly reports the
+   table can never produce them and instead computes fishing and
+   villager-trading odds (`src/lib/treasure.ts`) — only Soul Speed, Swift
+   Sneak, and Wind Burst are flagged as structure-loot-only (neither fishing
+   nor trading can produce them); Riptide and Channeling look
+   treasure-flavored but are actually tradeable/fishable, see `treasure.ts`'s
+   header for why that was a real bug once, not just a naming quirk.
 
 **Data was re-verified mid-project against the actual generated game data**
 (github.com/misode/mcmeta) after a wiki-summary fetch turned out to have
@@ -263,7 +264,10 @@ no-accounts design).
     for the (rare, since this is a fully client-rendered app) case of JS
     failing to load at all.
 13. ~~Lightweight test suite (Vitest) for the pure logic~~ — done: 31 tests
-    across `recommend.test.ts`, `anvil.test.ts` (including the build-up
+    (at the time — check `npm run test`'s own output for the current
+    count rather than any number written here, since it'll drift again;
+    36 once `bestMethod.test.ts` landed with item 21 below) across
+    `recommend.test.ts`, `anvil.test.ts` (including the build-up
     cost formula against the confirmed-live numbers from the anvil
     optimizer's roadmap entry, and the order-invariance claim itself),
     `tableOdds.test.ts` (the bookshelf formula's deterministic level
@@ -397,3 +401,52 @@ To bump: `npm version <major|minor|patch> --no-git-tag-version` (updates
 commits deliberately, see the branch workflow below), then once merged to
 `main`, tag that commit: `git tag -a vX.Y.Z -m "..."` and push the tag
 (`git push origin vX.Y.Z`).
+
+## Code-review follow-up (v1.0.1)
+
+Ran the `mattpocock-skills:code-review` skill (two-axis: Standards against
+the `codebase-design` skill's Fowler-smell baseline since no
+`CODING_STANDARDS.md` exists, and Spec against this file) over the full
+history from the first commit to v1.0.0. Findings and what was done about
+each:
+
+- **Spec axis — 3 stale doc claims, no code defects.** Fixed directly:
+  this file previously said Riptide/Channeling were structure-loot-only
+  (wrong since the trading/fishing-scope fix — corrected above), claimed
+  the test suite had a fixed count that was already out of date, and
+  still listed deployment as "not yet live" under "Not yet decided" (long
+  since resolved, removed).
+- **Standards axis — 6 Fowler-smell judgement calls, no hard violations**
+  (no documented standards exist to violate). Addressed:
+  - *Duplicated Code* (the table-combo/book-combo result blocks in
+    `SearchMode.tsx`, and the label+select markup repeated 5x across
+    `page.tsx`/`SearchMode.tsx`) — extracted `RankedResultsList.tsx` and
+    `LabeledSelect.tsx`, two small deep modules per the `codebase-design`
+    vocabulary (small props interface, the medal/progress-bar/formatting
+    complexity hidden behind it). `RankedResultsList` also now backs the
+    best-method ranking, unifying what was a third near-identical copy.
+  - *Data Clump* (`page.tsx`'s `category`/`material`/`goalId`/`current`
+    state, which always changed together but lived in 4 separate
+    `useState` hooks) — moved to `advisorState.ts`: one `useReducer` whose
+    actions (`CHANGE_CATEGORY`, `SET_MATERIAL`, `SET_GOAL`, `SET_LEVEL`,
+    `HYDRATE`) own the "what resets/validates together" invariant instead
+    of relying on every call site remembering it. `HYDRATE` in particular
+    replaces 4 separate `setX` calls in the URL-hydration effect with one
+    dispatch, and is now unit-tested directly (`advisorState.test.ts`, 14
+    tests) — the validation logic is testable in isolation for the first
+    time.
+  - *Divergent Change* (`page.tsx` mixing layout, selection state,
+    recommendation rendering, and anvil-table rendering in one 447-line
+    component) — partially addressed as a side effect of the two
+    extractions above (down to ~400 lines); a full per-step component
+    split was deliberately **not** done this pass — bigger and riskier
+    than the review asked for, without React Testing Library coverage to
+    catch regressions, and the finding was already flagged "mild".
+  - *Shotgun Surgery* (adding an `EnchantingSlot`/`MethodKind` variant
+    touches several files) and *Primitive Obsession* (enchant ids as bare
+    strings) — deliberately **left alone**. Both domains are small and
+    essentially static (3 slots, 4 methods; enchant ids validated once at
+    the data layer via `enchantmentById`); centralizing either now would
+    be *Speculative Generality* — solving a change that isn't happening —
+    which the same smell baseline warns against just as much as the
+    smells it would "fix".

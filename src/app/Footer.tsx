@@ -1,6 +1,7 @@
 "use client";
 
 import { GAME_VERSION, DATA_VERIFIED_DATE } from "@/lib/gameVersion";
+import { APP_VERSION } from "@/lib/version";
 import { t } from "@/lib/strings";
 import type { Locale } from "@/lib/i18n";
 
@@ -18,6 +19,7 @@ const GITHUB_NEW_ISSUE_URL = "https://github.com/ALevesqueDev/enchant-advisor/is
 function buildBugReportUrl(locale: Locale): string {
   const body = [
     `**Link (exact state):** ${window.location.href}`,
+    `**App version:** v${APP_VERSION}`,
     `**Language:** ${locale}`,
     `**Game version:** ${GAME_VERSION} (data verified ${DATA_VERIFIED_DATE})`,
     `**Browser:** ${navigator.userAgent}`,
@@ -37,7 +39,11 @@ export default function Footer({ locale }: { locale: Locale }) {
 
   return (
     <footer className="mt-16 border-t border-[var(--surface-border)] pt-6 text-xs text-muted">
-      <p>
+      {/* Its own line, deliberately separate from the Minecraft-version line
+          right below — two different "version" numbers (this app's vs. the
+          pinned game release), easy to conflate if run together. */}
+      <p className="font-medium text-foreground">Enchant Advisor v{APP_VERSION}</p>
+      <p className="mt-1">
         {t("footerVersionPrefix", locale)} <span className="font-medium text-foreground">{GAME_VERSION}</span>{" "}
         {t("footerVersionSuffix", locale)} {DATA_VERIFIED_DATE}. {t("footerVersionNote", locale)}
       </p>

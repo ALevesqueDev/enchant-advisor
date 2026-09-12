@@ -374,3 +374,26 @@ nothing new user-facing, nothing that adds runtime weight.
     manually for Efficiency III on a pickaxe with 15 bookshelves: table
     ≈2 expected attempts, book ≈19, trading ≈67, fishing ≈2099 — the
     ranking behaves exactly as expected.
+
+## Versioning
+
+The app follows semver (`MAJOR.MINOR.PATCH`), tracked in `package.json`'s
+`"version"` field — the single source of truth, re-exported by
+`src/lib/version.ts` (same pattern as `gameVersion.ts` reading
+`game-version.json`, so the footer's displayed number can never drift from
+the real one) and shown in the footer as "Enchant Advisor vX.Y.Z", plus
+included in the pre-filled bug-report body.
+
+- **MAJOR** — a breaking/ground-up redesign (adding a backend/accounts,
+  dropping a mode). Expected to be rare.
+- **MINOR** — a new feature. Every roadmap item above is a minor bump.
+- **PATCH** — a bug fix or copy/UI tweak that isn't a feature.
+
+**v1.0.0** (this entry) is the declared baseline — everything built up to
+and including item 21 above.
+
+To bump: `npm version <major|minor|patch> --no-git-tag-version` (updates
+`package.json`/`package-lock.json` only, no auto-commit/tag — this project
+commits deliberately, see the branch workflow below), then once merged to
+`main`, tag that commit: `git tag -a vX.Y.Z -m "..."` and push the tag
+(`git push origin vX.Y.Z`).

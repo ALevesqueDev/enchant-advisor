@@ -1,0 +1,55 @@
+{
+  "protection": { "maxLevel": 4, "treasureOnly": false, "anvilCost": 1, "weight": 10, "minCost": { "base": 1, "perLevelAboveFirst": 11 }, "maxCost": { "base": 12, "perLevelAboveFirst": 11 } },
+  "fire_protection": { "maxLevel": 4, "treasureOnly": false, "anvilCost": 2, "weight": 5, "minCost": { "base": 10, "perLevelAboveFirst": 8 }, "maxCost": { "base": 18, "perLevelAboveFirst": 8 } },
+  "blast_protection": { "maxLevel": 4, "treasureOnly": false, "anvilCost": 4, "weight": 2, "minCost": { "base": 5, "perLevelAboveFirst": 8 }, "maxCost": { "base": 13, "perLevelAboveFirst": 8 } },
+  "projectile_protection": { "maxLevel": 4, "treasureOnly": false, "anvilCost": 2, "weight": 5, "minCost": { "base": 3, "perLevelAboveFirst": 6 }, "maxCost": { "base": 9, "perLevelAboveFirst": 6 } },
+
+  "thorns": { "maxLevel": 3, "treasureOnly": false, "anvilCost": 8, "weight": 1, "minCost": { "base": 10, "perLevelAboveFirst": 20 }, "maxCost": { "base": 60, "perLevelAboveFirst": 20 } },
+  "respiration": { "maxLevel": 3, "treasureOnly": false, "anvilCost": 4, "weight": 2, "minCost": { "base": 10, "perLevelAboveFirst": 10 }, "maxCost": { "base": 40, "perLevelAboveFirst": 10 } },
+  "aqua_affinity": { "maxLevel": 1, "treasureOnly": false, "anvilCost": 4, "weight": 2, "minCost": { "base": 1, "perLevelAboveFirst": 0 }, "maxCost": { "base": 41, "perLevelAboveFirst": 0 } },
+  "depth_strider": { "maxLevel": 3, "treasureOnly": false, "anvilCost": 4, "weight": 2, "minCost": { "base": 10, "perLevelAboveFirst": 10 }, "maxCost": { "base": 25, "perLevelAboveFirst": 10 } },
+  "frost_walker": { "maxLevel": 2, "treasureOnly": true, "anvilCost": 4, "weight": 2, "minCost": { "base": 10, "perLevelAboveFirst": 10 }, "maxCost": { "base": 25, "perLevelAboveFirst": 10 } },
+  "feather_falling": { "maxLevel": 4, "treasureOnly": false, "anvilCost": 2, "weight": 5, "minCost": { "base": 5, "perLevelAboveFirst": 6 }, "maxCost": { "base": 11, "perLevelAboveFirst": 6 } },
+  "soul_speed": { "maxLevel": 3, "treasureOnly": true, "anvilCost": 8, "weight": 1, "minCost": { "base": 10, "perLevelAboveFirst": 10 }, "maxCost": { "base": 25, "perLevelAboveFirst": 10 } },
+  "swift_sneak": { "maxLevel": 3, "treasureOnly": true, "anvilCost": 8, "weight": 1, "minCost": { "base": 25, "perLevelAboveFirst": 25 }, "maxCost": { "base": 75, "perLevelAboveFirst": 25 } },
+  "binding_curse": { "maxLevel": 1, "treasureOnly": true, "anvilCost": 8, "weight": 1, "minCost": { "base": 25, "perLevelAboveFirst": 0 }, "maxCost": { "base": 50, "perLevelAboveFirst": 0 } },
+
+  "vanishing_curse": { "maxLevel": 1, "treasureOnly": true, "anvilCost": 8, "weight": 1, "minCost": { "base": 25, "perLevelAboveFirst": 0 }, "maxCost": { "base": 50, "perLevelAboveFirst": 0 } },
+  "unbreaking": { "maxLevel": 3, "treasureOnly": false, "anvilCost": 2, "weight": 5, "minCost": { "base": 5, "perLevelAboveFirst": 8 }, "maxCost": { "base": 55, "perLevelAboveFirst": 8 } },
+  "mending": { "maxLevel": 1, "treasureOnly": true, "anvilCost": 4, "weight": 2, "minCost": { "base": 25, "perLevelAboveFirst": 25 }, "maxCost": { "base": 75, "perLevelAboveFirst": 25 } },
+
+  "sharpness": { "maxLevel": 5, "treasureOnly": false, "anvilCost": 1, "weight": 10, "minCost": { "base": 1, "perLevelAboveFirst": 11 }, "maxCost": { "base": 21, "perLevelAboveFirst": 11 } },
+  "smite": { "maxLevel": 5, "treasureOnly": false, "anvilCost": 2, "weight": 5, "minCost": { "base": 5, "perLevelAboveFirst": 8 }, "maxCost": { "base": 25, "perLevelAboveFirst": 8 } },
+  "bane_of_arthropods": { "maxLevel": 5, "treasureOnly": false, "anvilCost": 2, "weight": 5, "minCost": { "base": 5, "perLevelAboveFirst": 8 }, "maxCost": { "base": 25, "perLevelAboveFirst": 8 } },
+  "knockback": { "maxLevel": 2, "treasureOnly": false, "anvilCost": 2, "weight": 5, "minCost": { "base": 5, "perLevelAboveFirst": 20 }, "maxCost": { "base": 55, "perLevelAboveFirst": 20 } },
+  "fire_aspect": { "maxLevel": 2, "treasureOnly": false, "anvilCost": 4, "weight": 2, "minCost": { "base": 10, "perLevelAboveFirst": 20 }, "maxCost": { "base": 60, "perLevelAboveFirst": 20 } },
+  "looting": { "maxLevel": 3, "treasureOnly": false, "anvilCost": 4, "weight": 2, "minCost": { "base": 15, "perLevelAboveFirst": 9 }, "maxCost": { "base": 65, "perLevelAboveFirst": 9 } },
+  "sweeping_edge": { "maxLevel": 3, "treasureOnly": false, "anvilCost": 4, "weight": 2, "minCost": { "base": 5, "perLevelAboveFirst": 9 }, "maxCost": { "base": 20, "perLevelAboveFirst": 9 } },
+
+  "density": { "maxLevel": 5, "treasureOnly": false, "anvilCost": 2, "weight": 5, "minCost": { "base": 5, "perLevelAboveFirst": 8 }, "maxCost": { "base": 25, "perLevelAboveFirst": 8 } },
+  "breach": { "maxLevel": 4, "treasureOnly": false, "anvilCost": 4, "weight": 2, "minCost": { "base": 15, "perLevelAboveFirst": 9 }, "maxCost": { "base": 65, "perLevelAboveFirst": 9 } },
+  "wind_burst": { "maxLevel": 3, "treasureOnly": true, "anvilCost": 4, "weight": 2, "minCost": { "base": 15, "perLevelAboveFirst": 9 }, "maxCost": { "base": 65, "perLevelAboveFirst": 9 } },
+
+  "lunge": { "maxLevel": 3, "treasureOnly": false, "anvilCost": 2, "weight": 5, "minCost": { "base": 5, "perLevelAboveFirst": 8 }, "maxCost": { "base": 25, "perLevelAboveFirst": 8 } },
+
+  "efficiency": { "maxLevel": 5, "treasureOnly": false, "anvilCost": 1, "weight": 10, "minCost": { "base": 1, "perLevelAboveFirst": 10 }, "maxCost": { "base": 51, "perLevelAboveFirst": 10 } },
+  "silk_touch": { "maxLevel": 1, "treasureOnly": false, "anvilCost": 8, "weight": 1, "minCost": { "base": 15, "perLevelAboveFirst": 0 }, "maxCost": { "base": 65, "perLevelAboveFirst": 0 } },
+  "fortune": { "maxLevel": 3, "treasureOnly": false, "anvilCost": 4, "weight": 2, "minCost": { "base": 15, "perLevelAboveFirst": 9 }, "maxCost": { "base": 65, "perLevelAboveFirst": 9 } },
+
+  "power": { "maxLevel": 5, "treasureOnly": false, "anvilCost": 1, "weight": 10, "minCost": { "base": 1, "perLevelAboveFirst": 10 }, "maxCost": { "base": 16, "perLevelAboveFirst": 10 } },
+  "punch": { "maxLevel": 2, "treasureOnly": false, "anvilCost": 4, "weight": 2, "minCost": { "base": 12, "perLevelAboveFirst": 20 }, "maxCost": { "base": 37, "perLevelAboveFirst": 20 } },
+  "flame": { "maxLevel": 1, "treasureOnly": false, "anvilCost": 4, "weight": 2, "minCost": { "base": 20, "perLevelAboveFirst": 0 }, "maxCost": { "base": 50, "perLevelAboveFirst": 0 } },
+  "infinity": { "maxLevel": 1, "treasureOnly": false, "anvilCost": 8, "weight": 1, "minCost": { "base": 20, "perLevelAboveFirst": 0 }, "maxCost": { "base": 50, "perLevelAboveFirst": 0 } },
+
+  "quick_charge": { "maxLevel": 3, "treasureOnly": false, "anvilCost": 2, "weight": 5, "minCost": { "base": 12, "perLevelAboveFirst": 20 }, "maxCost": { "base": 50, "perLevelAboveFirst": 0 } },
+  "multishot": { "maxLevel": 1, "treasureOnly": false, "anvilCost": 4, "weight": 2, "minCost": { "base": 20, "perLevelAboveFirst": 0 }, "maxCost": { "base": 50, "perLevelAboveFirst": 0 } },
+  "piercing": { "maxLevel": 4, "treasureOnly": false, "anvilCost": 1, "weight": 10, "minCost": { "base": 1, "perLevelAboveFirst": 10 }, "maxCost": { "base": 50, "perLevelAboveFirst": 0 } },
+
+  "luck_of_the_sea": { "maxLevel": 3, "treasureOnly": false, "anvilCost": 4, "weight": 2, "minCost": { "base": 15, "perLevelAboveFirst": 9 }, "maxCost": { "base": 65, "perLevelAboveFirst": 9 } },
+  "lure": { "maxLevel": 3, "treasureOnly": false, "anvilCost": 4, "weight": 2, "minCost": { "base": 15, "perLevelAboveFirst": 9 }, "maxCost": { "base": 65, "perLevelAboveFirst": 9 } },
+
+  "impaling": { "maxLevel": 5, "treasureOnly": false, "anvilCost": 4, "weight": 2, "minCost": { "base": 1, "perLevelAboveFirst": 8 }, "maxCost": { "base": 21, "perLevelAboveFirst": 8 } },
+  "riptide": { "maxLevel": 3, "treasureOnly": false, "anvilCost": 4, "weight": 2, "minCost": { "base": 17, "perLevelAboveFirst": 7 }, "maxCost": { "base": 50, "perLevelAboveFirst": 0 } },
+  "loyalty": { "maxLevel": 3, "treasureOnly": false, "anvilCost": 2, "weight": 5, "minCost": { "base": 12, "perLevelAboveFirst": 7 }, "maxCost": { "base": 50, "perLevelAboveFirst": 0 } },
+  "channeling": { "maxLevel": 1, "treasureOnly": false, "anvilCost": 8, "weight": 1, "minCost": { "base": 25, "perLevelAboveFirst": 0 }, "maxCost": { "base": 50, "perLevelAboveFirst": 0 } }
+}

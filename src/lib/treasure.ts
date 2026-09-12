@@ -7,33 +7,23 @@
 import { ENCHANTMENTS, enchantmentById } from "./enchantments";
 import { simulateTableOdds } from "./tableOdds";
 
-export const TREASURE_ENCHANT_IDS = [
-  "mending",
-  "frost_walker",
-  "curse_of_binding",
-  "curse_of_vanishing",
-  "soul_speed",
-  "swift_sneak",
-  "riptide",
-  "channeling",
-] as const;
+export const TREASURE_ENCHANT_IDS = ["mending", "frost_walker", "binding_curse", "vanishing_curse", "soul_speed", "swift_sneak", "wind_burst"] as const;
 
 /**
  * Enchantments a villager trade / fishing "random enchanted book" roll can
  * produce: every non-treasure enchantment, PLUS these four specifically
  * (tags/enchantment/tradeable.json and on_random_loot.json — identical
- * membership). Soul Speed, Swift Sneak, Riptide, and Channeling are NOT in
- * this pool — they only come from structure loot (and Soul Speed also from
- * bartering with piglins).
+ * membership). Riptide and Channeling look treasure-flavored but are
+ * actually members of the `non_treasure` tag themselves — confirmed against
+ * the raw tag data by scripts/check-game-version.mjs, which caught this
+ * assistant's own earlier mistake (both were originally marked
+ * treasureOnly, sourced from a wiki-summary fetch rather than the tag
+ * itself). Soul Speed and Swift Sneak are genuinely absent from both tags —
+ * structure loot only (and Soul Speed also from bartering with piglins).
  */
-const TRADEABLE_TREASURE_ADDITIONS = ["mending", "frost_walker", "curse_of_binding", "curse_of_vanishing"];
+const TRADEABLE_TREASURE_ADDITIONS = ["mending", "frost_walker", "binding_curse", "vanishing_curse"];
 
-/**
- * The actual `tradeable` / `on_random_loot` tag membership: every
- * non-treasure enchantment plus the four additions above. Soul Speed,
- * Swift Sneak, Riptide, and Channeling are deliberately excluded — they're
- * treasure-only AND not in either tag.
- */
+/** The actual `tradeable` / `on_random_loot` tag membership: every non-treasure enchantment plus the four additions above. */
 function tradeableAndLootPool() {
   return ENCHANTMENTS.filter((e) => !e.treasureOnly || TRADEABLE_TREASURE_ADDITIONS.includes(e.id));
 }
@@ -58,8 +48,7 @@ const BASE_TREASURE_CATCH_CHANCE = 0.05;
 const STRUCTURE_ONLY_SOURCES: Record<string, string> = {
   soul_speed: "Butin de coffres de vestiges de bastion, ou troc avec un piglin (lingot d'or).",
   swift_sneak: "Butin de coffres de cité ancienne (Ancient City) — c'est la seule source.",
-  riptide: "Butin de structures (ex. ruines englouties, naufrages) — pas de pêche ni de commerce.",
-  channeling: "Butin de structures — pas de pêche ni de commerce.",
+  wind_burst: "Butin de coffre à récompense (vault) des Chambres d'épreuves (Trial Chambers) — pas de pêche ni de commerce.",
 };
 
 export function treasureOdds(enchantId: string, targetLevel: number, luckOfTheSeaLevel = 0): TreasureOddsResult[] {

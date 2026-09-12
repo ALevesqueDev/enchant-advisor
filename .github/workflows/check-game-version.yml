@@ -1,0 +1,60 @@
+name: Check Minecraft version freshness
+
+on:
+  schedule:
+    # Mondays at 09:00 UTC. Minecraft releases aren't on a fixed schedule,
+    # but weekly is cheap and catches drift within a few days either way.
+    - cron: "0 9 * * 1"
+  workflow_dispatch: {}
+
+permissions:
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Run freshness check
+        id: check
+        run: |
+          set +e
+          output=$(node scripts/check-game-version.mjs 2>&1)
+          exit_code=$?
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+          {
+            echo "output<<EOF"
+            echo "$output"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "$output"
+          exit 0
+
+      - name: Open or update issue if drift found
+        if: steps.check.outputs.exit_code != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ steps.check.outputs.output }}
+        run: |
+          existing=$(gh issue list --label "game-version-drift" --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$BODY"
+          else
+            gh issue create --title "Minecraft version drift detected" --label "game-version-drift" --body "$BODY"
+          fi
+
+      - name: Close stale drift issue if now clean
+        if: steps.check.outputs.exit_code == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          existing=$(gh issue list --label "game-version-drift" --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Resolved — the version pin and data now match the latest stable release."
+            gh issue close "$existing"
+          fi

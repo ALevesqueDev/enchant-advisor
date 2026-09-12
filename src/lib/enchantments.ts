@@ -25,6 +25,7 @@
 // Looting, or Sweeping Edge, which stay sword-exclusive.
 
 import type { Enchantment, ItemCategory } from "./types";
+import enchantmentData from "./enchantment-data.json";
 
 const ALL_ARMOR: ItemCategory[] = ["helmet", "chestplate", "leggings", "boots"];
 const MINING_TOOLS: ItemCategory[] = ["pickaxe", "shovel", "hoe", "axe"];
@@ -33,74 +34,78 @@ const EVERYTHING_DURABLE: ItemCategory[] = [
   ...ALL_ARMOR, "elytra", "shield", ...MINING_TOOLS, ...COMBAT_BLADES, "bow", "crossbow", "trident", "fishing_rod",
 ];
 
+/**
+ * Curated per-enchantment info that ISN'T raw comparable game data: display
+ * name and which item categories it applies to (our own modeling choice,
+ * not something a single JSON file gives you directly). The numbers
+ * (weight, maxLevel, costs, anvilCost) live in enchantment-data.json
+ * instead, specifically so scripts/check-game-version.mjs can diff them
+ * against a fresh fetch without parsing this file.
+ */
+const CURATION: Record<string, { name: string; categories: ItemCategory[] }> = {
+  protection: { name: "Protection", categories: ALL_ARMOR },
+  fire_protection: { name: "Fire Protection", categories: ALL_ARMOR },
+  blast_protection: { name: "Blast Protection", categories: ALL_ARMOR },
+  projectile_protection: { name: "Projectile Protection", categories: ALL_ARMOR },
+
+  thorns: { name: "Thorns", categories: ALL_ARMOR },
+  respiration: { name: "Respiration", categories: ["helmet"] },
+  aqua_affinity: { name: "Aqua Affinity", categories: ["helmet"] },
+  depth_strider: { name: "Depth Strider", categories: ["boots"] },
+  frost_walker: { name: "Frost Walker", categories: ["boots"] },
+  feather_falling: { name: "Feather Falling", categories: ["boots"] },
+  soul_speed: { name: "Soul Speed", categories: ["boots"] },
+  swift_sneak: { name: "Swift Sneak", categories: ["leggings"] },
+  binding_curse: { name: "Curse of Binding", categories: [...ALL_ARMOR, "elytra"] },
+
+  vanishing_curse: { name: "Curse of Vanishing", categories: [...EVERYTHING_DURABLE, "elytra"] },
+  unbreaking: { name: "Unbreaking", categories: [...EVERYTHING_DURABLE, "elytra"] },
+  mending: { name: "Mending", categories: [...EVERYTHING_DURABLE, "elytra"] },
+
+  sharpness: { name: "Sharpness", categories: COMBAT_BLADES },
+  smite: { name: "Smite", categories: COMBAT_BLADES },
+  bane_of_arthropods: { name: "Bane of Arthropods", categories: COMBAT_BLADES },
+  knockback: { name: "Knockback", categories: ["sword"] },
+  fire_aspect: { name: "Fire Aspect", categories: ["sword", "mace"] },
+  looting: { name: "Looting", categories: ["sword"] },
+  sweeping_edge: { name: "Sweeping Edge", categories: ["sword"] },
+
+  density: { name: "Density", categories: ["mace"] },
+  breach: { name: "Breach", categories: ["mace"] },
+  wind_burst: { name: "Wind Burst", categories: ["mace"] },
+
+  lunge: { name: "Lunge", categories: ["spear"] },
+
+  efficiency: { name: "Efficiency", categories: MINING_TOOLS },
+  silk_touch: { name: "Silk Touch", categories: MINING_TOOLS },
+  fortune: { name: "Fortune", categories: MINING_TOOLS },
+
+  power: { name: "Power", categories: ["bow"] },
+  punch: { name: "Punch", categories: ["bow"] },
+  flame: { name: "Flame", categories: ["bow"] },
+  infinity: { name: "Infinity", categories: ["bow"] },
+
+  quick_charge: { name: "Quick Charge", categories: ["crossbow"] },
+  multishot: { name: "Multishot", categories: ["crossbow"] },
+  piercing: { name: "Piercing", categories: ["crossbow"] },
+
+  luck_of_the_sea: { name: "Luck of the Sea", categories: ["fishing_rod"] },
+  lure: { name: "Lure", categories: ["fishing_rod"] },
+
+  impaling: { name: "Impaling", categories: ["trident"] },
+  riptide: { name: "Riptide", categories: ["trident"] },
+  loyalty: { name: "Loyalty", categories: ["trident"] },
+  channeling: { name: "Channeling", categories: ["trident"] },
+};
+
 // Raw per-enchantment data, before incompatibilities are derived below.
 type RawEnchantment = Omit<Enchantment, "incompatibleWith">;
 
-const RAW: RawEnchantment[] = [
-  // --- Armor: protection line ---
-  { id: "protection", name: "Protection", maxLevel: 4, treasureOnly: false, categories: ALL_ARMOR, anvilCost: 1, weight: 10, minCost: { base: 1, perLevelAboveFirst: 11 }, maxCost: { base: 12, perLevelAboveFirst: 11 } },
-  { id: "fire_protection", name: "Fire Protection", maxLevel: 4, treasureOnly: false, categories: ALL_ARMOR, anvilCost: 2, weight: 5, minCost: { base: 10, perLevelAboveFirst: 8 }, maxCost: { base: 18, perLevelAboveFirst: 8 } },
-  { id: "blast_protection", name: "Blast Protection", maxLevel: 4, treasureOnly: false, categories: ALL_ARMOR, anvilCost: 4, weight: 2, minCost: { base: 5, perLevelAboveFirst: 8 }, maxCost: { base: 13, perLevelAboveFirst: 8 } },
-  { id: "projectile_protection", name: "Projectile Protection", maxLevel: 4, treasureOnly: false, categories: ALL_ARMOR, anvilCost: 2, weight: 5, minCost: { base: 3, perLevelAboveFirst: 6 }, maxCost: { base: 9, perLevelAboveFirst: 6 } },
-
-  { id: "thorns", name: "Thorns", maxLevel: 3, treasureOnly: false, categories: ALL_ARMOR, anvilCost: 8, weight: 1, minCost: { base: 10, perLevelAboveFirst: 20 }, maxCost: { base: 60, perLevelAboveFirst: 20 } },
-  { id: "respiration", name: "Respiration", maxLevel: 3, treasureOnly: false, categories: ["helmet"], anvilCost: 4, weight: 2, minCost: { base: 10, perLevelAboveFirst: 10 }, maxCost: { base: 40, perLevelAboveFirst: 10 } },
-  { id: "aqua_affinity", name: "Aqua Affinity", maxLevel: 1, treasureOnly: false, categories: ["helmet"], anvilCost: 4, weight: 2, minCost: { base: 1, perLevelAboveFirst: 0 }, maxCost: { base: 41, perLevelAboveFirst: 0 } },
-  { id: "depth_strider", name: "Depth Strider", maxLevel: 3, treasureOnly: false, categories: ["boots"], anvilCost: 4, weight: 2, minCost: { base: 10, perLevelAboveFirst: 10 }, maxCost: { base: 25, perLevelAboveFirst: 10 } },
-  { id: "frost_walker", name: "Frost Walker", maxLevel: 2, treasureOnly: true, categories: ["boots"], anvilCost: 4, weight: 2, minCost: { base: 10, perLevelAboveFirst: 10 }, maxCost: { base: 25, perLevelAboveFirst: 10 } },
-  { id: "feather_falling", name: "Feather Falling", maxLevel: 4, treasureOnly: false, categories: ["boots"], anvilCost: 2, weight: 5, minCost: { base: 5, perLevelAboveFirst: 6 }, maxCost: { base: 11, perLevelAboveFirst: 6 } },
-  { id: "soul_speed", name: "Soul Speed", maxLevel: 3, treasureOnly: true, categories: ["boots"], anvilCost: 8, weight: 1, minCost: { base: 10, perLevelAboveFirst: 10 }, maxCost: { base: 25, perLevelAboveFirst: 10 } },
-  { id: "swift_sneak", name: "Swift Sneak", maxLevel: 3, treasureOnly: true, categories: ["leggings"], anvilCost: 8, weight: 1, minCost: { base: 25, perLevelAboveFirst: 25 }, maxCost: { base: 75, perLevelAboveFirst: 25 } },
-  { id: "curse_of_binding", name: "Curse of Binding", maxLevel: 1, treasureOnly: true, categories: [...ALL_ARMOR, "elytra"], anvilCost: 8, weight: 1, minCost: { base: 25, perLevelAboveFirst: 0 }, maxCost: { base: 50, perLevelAboveFirst: 0 } },
-
-  // --- Universal ---
-  { id: "curse_of_vanishing", name: "Curse of Vanishing", maxLevel: 1, treasureOnly: true, categories: [...EVERYTHING_DURABLE, "elytra"], anvilCost: 8, weight: 1, minCost: { base: 25, perLevelAboveFirst: 0 }, maxCost: { base: 50, perLevelAboveFirst: 0 } },
-  { id: "unbreaking", name: "Unbreaking", maxLevel: 3, treasureOnly: false, categories: [...EVERYTHING_DURABLE, "elytra"], anvilCost: 2, weight: 5, minCost: { base: 5, perLevelAboveFirst: 8 }, maxCost: { base: 55, perLevelAboveFirst: 8 } },
-  { id: "mending", name: "Mending", maxLevel: 1, treasureOnly: true, categories: [...EVERYTHING_DURABLE, "elytra"], anvilCost: 4, weight: 2, minCost: { base: 25, perLevelAboveFirst: 25 }, maxCost: { base: 75, perLevelAboveFirst: 25 } },
-
-  // --- Combat (sword/axe/mace/spear) ---
-  { id: "sharpness", name: "Sharpness", maxLevel: 5, treasureOnly: false, categories: COMBAT_BLADES, anvilCost: 1, weight: 10, minCost: { base: 1, perLevelAboveFirst: 11 }, maxCost: { base: 21, perLevelAboveFirst: 11 } },
-  { id: "smite", name: "Smite", maxLevel: 5, treasureOnly: false, categories: COMBAT_BLADES, anvilCost: 2, weight: 5, minCost: { base: 5, perLevelAboveFirst: 8 }, maxCost: { base: 25, perLevelAboveFirst: 8 } },
-  { id: "bane_of_arthropods", name: "Bane of Arthropods", maxLevel: 5, treasureOnly: false, categories: COMBAT_BLADES, anvilCost: 2, weight: 5, minCost: { base: 5, perLevelAboveFirst: 8 }, maxCost: { base: 25, perLevelAboveFirst: 8 } },
-  { id: "knockback", name: "Knockback", maxLevel: 2, treasureOnly: false, categories: ["sword"], anvilCost: 2, weight: 5, minCost: { base: 5, perLevelAboveFirst: 20 }, maxCost: { base: 55, perLevelAboveFirst: 20 } },
-  { id: "fire_aspect", name: "Fire Aspect", maxLevel: 2, treasureOnly: false, categories: ["sword", "mace"], anvilCost: 4, weight: 2, minCost: { base: 10, perLevelAboveFirst: 20 }, maxCost: { base: 60, perLevelAboveFirst: 20 } },
-  { id: "looting", name: "Looting", maxLevel: 3, treasureOnly: false, categories: ["sword"], anvilCost: 4, weight: 2, minCost: { base: 15, perLevelAboveFirst: 9 }, maxCost: { base: 65, perLevelAboveFirst: 9 } },
-  { id: "sweeping_edge", name: "Sweeping Edge", maxLevel: 3, treasureOnly: false, categories: ["sword"], anvilCost: 4, weight: 2, minCost: { base: 5, perLevelAboveFirst: 9 }, maxCost: { base: 20, perLevelAboveFirst: 9 } },
-
-  // --- Mace-exclusive ---
-  { id: "density", name: "Density", maxLevel: 5, treasureOnly: false, categories: ["mace"], anvilCost: 2, weight: 5, minCost: { base: 5, perLevelAboveFirst: 8 }, maxCost: { base: 25, perLevelAboveFirst: 8 } },
-  { id: "breach", name: "Breach", maxLevel: 4, treasureOnly: false, categories: ["mace"], anvilCost: 4, weight: 2, minCost: { base: 15, perLevelAboveFirst: 9 }, maxCost: { base: 65, perLevelAboveFirst: 9 } },
-  { id: "wind_burst", name: "Wind Burst", maxLevel: 3, treasureOnly: false, categories: ["mace"], anvilCost: 2, weight: 2, minCost: { base: 15, perLevelAboveFirst: 9 }, maxCost: { base: 65, perLevelAboveFirst: 9 } },
-
-  // --- Spear-exclusive ---
-  { id: "lunge", name: "Lunge", maxLevel: 3, treasureOnly: false, categories: ["spear"], anvilCost: 2, weight: 5, minCost: { base: 5, perLevelAboveFirst: 8 }, maxCost: { base: 25, perLevelAboveFirst: 8 } },
-
-  // --- Mining tools ---
-  { id: "efficiency", name: "Efficiency", maxLevel: 5, treasureOnly: false, categories: MINING_TOOLS, anvilCost: 1, weight: 10, minCost: { base: 1, perLevelAboveFirst: 10 }, maxCost: { base: 51, perLevelAboveFirst: 10 } },
-  { id: "silk_touch", name: "Silk Touch", maxLevel: 1, treasureOnly: false, categories: MINING_TOOLS, anvilCost: 8, weight: 1, minCost: { base: 15, perLevelAboveFirst: 0 }, maxCost: { base: 65, perLevelAboveFirst: 0 } },
-  { id: "fortune", name: "Fortune", maxLevel: 3, treasureOnly: false, categories: MINING_TOOLS, anvilCost: 4, weight: 2, minCost: { base: 15, perLevelAboveFirst: 9 }, maxCost: { base: 65, perLevelAboveFirst: 9 } },
-
-  // --- Bow ---
-  { id: "power", name: "Power", maxLevel: 5, treasureOnly: false, categories: ["bow"], anvilCost: 1, weight: 10, minCost: { base: 1, perLevelAboveFirst: 10 }, maxCost: { base: 16, perLevelAboveFirst: 10 } },
-  { id: "punch", name: "Punch", maxLevel: 2, treasureOnly: false, categories: ["bow"], anvilCost: 4, weight: 2, minCost: { base: 12, perLevelAboveFirst: 20 }, maxCost: { base: 37, perLevelAboveFirst: 20 } },
-  { id: "flame", name: "Flame", maxLevel: 1, treasureOnly: false, categories: ["bow"], anvilCost: 4, weight: 2, minCost: { base: 20, perLevelAboveFirst: 0 }, maxCost: { base: 50, perLevelAboveFirst: 0 } },
-  { id: "infinity", name: "Infinity", maxLevel: 1, treasureOnly: false, categories: ["bow"], anvilCost: 8, weight: 1, minCost: { base: 20, perLevelAboveFirst: 0 }, maxCost: { base: 50, perLevelAboveFirst: 0 } },
-
-  // --- Crossbow ---
-  { id: "quick_charge", name: "Quick Charge", maxLevel: 3, treasureOnly: false, categories: ["crossbow"], anvilCost: 2, weight: 5, minCost: { base: 12, perLevelAboveFirst: 20 }, maxCost: { base: 50, perLevelAboveFirst: 0 } },
-  { id: "multishot", name: "Multishot", maxLevel: 1, treasureOnly: false, categories: ["crossbow"], anvilCost: 4, weight: 2, minCost: { base: 20, perLevelAboveFirst: 0 }, maxCost: { base: 50, perLevelAboveFirst: 0 } },
-  { id: "piercing", name: "Piercing", maxLevel: 4, treasureOnly: false, categories: ["crossbow"], anvilCost: 1, weight: 10, minCost: { base: 1, perLevelAboveFirst: 10 }, maxCost: { base: 50, perLevelAboveFirst: 0 } },
-
-  // --- Fishing rod ---
-  { id: "luck_of_the_sea", name: "Luck of the Sea", maxLevel: 3, treasureOnly: false, categories: ["fishing_rod"], anvilCost: 4, weight: 2, minCost: { base: 15, perLevelAboveFirst: 9 }, maxCost: { base: 65, perLevelAboveFirst: 9 } },
-  { id: "lure", name: "Lure", maxLevel: 3, treasureOnly: false, categories: ["fishing_rod"], anvilCost: 4, weight: 2, minCost: { base: 15, perLevelAboveFirst: 9 }, maxCost: { base: 65, perLevelAboveFirst: 9 } },
-
-  // --- Trident ---
-  { id: "impaling", name: "Impaling", maxLevel: 5, treasureOnly: false, categories: ["trident"], anvilCost: 4, weight: 2, minCost: { base: 1, perLevelAboveFirst: 8 }, maxCost: { base: 21, perLevelAboveFirst: 8 } },
-  { id: "riptide", name: "Riptide", maxLevel: 3, treasureOnly: true, categories: ["trident"], anvilCost: 4, weight: 2, minCost: { base: 17, perLevelAboveFirst: 7 }, maxCost: { base: 50, perLevelAboveFirst: 0 } },
-  { id: "loyalty", name: "Loyalty", maxLevel: 3, treasureOnly: false, categories: ["trident"], anvilCost: 2, weight: 5, minCost: { base: 12, perLevelAboveFirst: 7 }, maxCost: { base: 50, perLevelAboveFirst: 0 } },
-  { id: "channeling", name: "Channeling", maxLevel: 1, treasureOnly: true, categories: ["trident"], anvilCost: 8, weight: 1, minCost: { base: 25, perLevelAboveFirst: 0 }, maxCost: { base: 50, perLevelAboveFirst: 0 } },
-];
+const RAW: RawEnchantment[] = Object.entries(CURATION).map(([id, curated]) => {
+  const data = (enchantmentData as Record<string, Omit<RawEnchantment, "id" | "name" | "categories">>)[id];
+  if (!data) throw new Error(`enchantment-data.json is missing an entry for "${id}"`);
+  return { id, ...curated, ...data };
+});
 
 /**
  * Real `tags/enchantment/exclusive_set/*.json` membership — every

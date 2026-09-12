@@ -93,9 +93,9 @@ exist in the current game, past this assistant's Jan 2026 training cutoff.
 
 `npm run build` and `npm run lint` both pass clean.
 
-Repo: https://github.com/ALevesqueDev/enchant-advisor (private) · Live:
-https://enchant-advisor.vercel.app (auto-deploys from `main`; `dev` gets its
-own preview URL per push)
+Repo: https://github.com/ALevesqueDev/enchant-advisor (public, all rights
+reserved — see LICENSE) · Live: https://enchant-advisor.vercel.app
+(auto-deploys from `main`; `dev` gets its own preview URL per push)
 
 ## Version pinning
 
@@ -103,25 +103,36 @@ own preview URL per push)
 Mojang also switched from the old `1.21.x` naming to a `year.release` scheme
 (`26.x`) at some point after this assistant's Jan 2026 cutoff — the app is
 currently pinned to **26.2** (confirmed stable via Mojang's own version
-manifest on 2026-09-11; see `src/lib/gameVersion.ts`, shown in the footer).
+manifest on 2026-09-11; see `src/lib/game-version.json`, shown in the footer).
 
-To bump it: update `GAME_VERSION`/`DATA_VERIFIED_DATE` in `gameVersion.ts`,
-then re-verify `enchantments.ts`, `materials.ts`, and the anvil cost table
-against `github.com/misode/mcmeta` at the new version's `<version>-data` /
-`<version>-summary` tags (not the rolling `data`/`summary` branches, which
-track the latest snapshot — that's what caused the version confusion this
-pass). A small script that diffs our hardcoded values against a freshly
-fetched version would catch drift automatically — see Roadmap.
+**Automated now**: `scripts/check-game-version.mjs` re-fetches Mojang's
+version manifest plus the enchantment data from `misode/mcmeta`, diffs it
+against `src/lib/enchantment-data.json`, and prints a report (exit code 1 if
+anything needs attention). A weekly GitHub Action
+(`.github/workflows/check-game-version.yml`) runs it and opens/updates a
+`game-version-drift`-labeled issue when there's something to review — it
+never edits code itself, since new content (a new item category, a goal
+worth adding) needs a human call, not just number-patching. Run it manually
+with `npm run check-version`.
+
+**The first real run already earned its keep** — before this script existed,
+three actual data errors had crept into the app itself (not just drift from
+a new version): `wind_burst`'s anvil cost was mistyped (2 instead of 4), and
+`riptide`/`channeling` were wrongly marked treasure-only while `wind_burst`
+was wrongly marked *not* treasure-only — all three sourced from an earlier
+wiki-summary fetch rather than the raw `non_treasure` tag data. Fixed by
+cross-checking the tag directly; see `src/lib/treasure.ts`'s comments.
+
+To bump the pin by hand: update `src/lib/game-version.json`, then run
+`npm run check-version` against the new version and apply what it reports to
+`enchantment-data.json` / `enchantments.ts` / `materials.ts`.
 
 ## Roadmap
 
 Roughly in order — later items depend on earlier ones less than they depend
 on which of these you actually want first.
 
-1. **Data-freshness check script** — a script that re-fetches
-   `enchantments.ts`'s numbers from misode/mcmeta and diffs against what's
-   hardcoded, so a new Minecraft version doesn't silently go stale. Cheap,
-   high value given the version-pinning issue above.
+1. ~~Data-freshness check script~~ — done, see Version pinning above.
 2. **Book-enchanting mode** — both the anvil calculator and the table-odds
    simulator currently model enchanting the item directly. Enchanting a
    book first (then anvil-transferring it) is a very common real strategy

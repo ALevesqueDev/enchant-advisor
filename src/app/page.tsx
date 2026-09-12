@@ -8,6 +8,7 @@ import { planAnvilCombines } from "@/lib/anvil";
 import { CATEGORY_ICON, RARITY_LABELS, RARITY_VAR, rarityFromWeight } from "@/lib/presentation";
 import type { EnchantSet, ItemCategory } from "@/lib/types";
 import SearchMode from "./SearchMode";
+import Footer from "./Footer";
 
 const CATEGORIES = Object.keys(ITEM_CATEGORY_LABELS) as ItemCategory[];
 
@@ -279,6 +280,8 @@ export default function Home() {
           )}
         </>
       )}
+
+      <Footer />
     </div>
   );
 }

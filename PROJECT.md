@@ -93,4 +93,57 @@ exist in the current game, past this assistant's Jan 2026 training cutoff.
 
 `npm run build` and `npm run lint` both pass clean.
 
-Repo: https://github.com/ALevesqueDev/enchant-advisor (private, `dev` branch)
+Repo: https://github.com/ALevesqueDev/enchant-advisor (private) · Live:
+https://enchant-advisor.vercel.app (auto-deploys from `main`; `dev` gets its
+own preview URL per push)
+
+## Version pinning
+
+**All game data is tied to a specific Minecraft version and WILL drift.**
+Mojang also switched from the old `1.21.x` naming to a `year.release` scheme
+(`26.x`) at some point after this assistant's Jan 2026 cutoff — the app is
+currently pinned to **26.2** (confirmed stable via Mojang's own version
+manifest on 2026-09-11; see `src/lib/gameVersion.ts`, shown in the footer).
+
+To bump it: update `GAME_VERSION`/`DATA_VERIFIED_DATE` in `gameVersion.ts`,
+then re-verify `enchantments.ts`, `materials.ts`, and the anvil cost table
+against `github.com/misode/mcmeta` at the new version's `<version>-data` /
+`<version>-summary` tags (not the rolling `data`/`summary` branches, which
+track the latest snapshot — that's what caused the version confusion this
+pass). A small script that diffs our hardcoded values against a freshly
+fetched version would catch drift automatically — see Roadmap.
+
+## Roadmap
+
+Roughly in order — later items depend on earlier ones less than they depend
+on which of these you actually want first.
+
+1. **Data-freshness check script** — a script that re-fetches
+   `enchantments.ts`'s numbers from misode/mcmeta and diffs against what's
+   hardcoded, so a new Minecraft version doesn't silently go stale. Cheap,
+   high value given the version-pinning issue above.
+2. **Book-enchanting mode** — both the anvil calculator and the table-odds
+   simulator currently model enchanting the item directly. Enchanting a
+   book first (then anvil-transferring it) is a very common real strategy
+   and has slightly different rules (the "-1 enchantment" quirk for books —
+   see `tableOdds.ts`).
+3. **Full anvil optimizer** — model pre-combining two low-level books into
+   a higher-level one before it ever touches the final item, which is where
+   combine *order* actually starts to affect total cost (today's calculator
+   correctly says order doesn't matter, but only because it doesn't model
+   this cheaper path).
+4. **Shareable builds** — serialize the current item/enchants/goal (or
+   search) selection into the URL query string so a link can be shared
+   without needing any backend/accounts.
+5. **Bookshelf-count helper** — let the user pick "0-15 bookshelves"
+   instead of typing the displayed level directly, matching what they
+   actually see at their own table.
+6. **Mobile QA pass** — one real click-blocking bug already surfaced
+   (`.glint::after` missing `pointer-events: none`) from the visual
+   redesign; worth a dedicated pass across both modes on a real phone.
+7. **PWA support** — add a manifest + service worker so it can be
+   "installed" to a phone home screen. Purely cosmetic (it's still a web
+   app under the hood) but closes the "is this an app?" question for good.
+8. **Public repo + license**, if bug reports from outside testers matter —
+   right now the GitHub issues link in the footer 404s for anyone who
+   isn't a collaborator on the private repo.

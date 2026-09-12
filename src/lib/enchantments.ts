@@ -1,4 +1,6 @@
-// Enchantment database — Java Edition, current version.
+// Enchantment database — Java Edition. Pinned to the version in
+// gameVersion.ts — re-verify against github.com/misode/mcmeta (tag
+// `<version>-data`) whenever that constant is bumped.
 //
 // Pulled from the actual generated game data (github.com/misode/mcmeta,
 // which mirrors Mojang's data generator output) on 2026-09-11, not from

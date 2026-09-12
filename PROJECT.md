@@ -298,8 +298,11 @@ no-accounts design).
     the static build's server-side prerender, so it defaults to "online"
     there and self-corrects immediately on mount in a real browser — same
     hydrate-after-mount pattern as `LocaleContext`'s localStorage read.
-16. **Pre-filled bug report link** — the footer's "report a bug" link
-    currently opens a blank GitHub issue. Since shareable links (item 7)
-    already encode the exact current selection, pre-filling the issue body
-    with that link (plus browser/locale info) turns every bug report into
-    an exact repro instead of a guessing game.
+16. ~~Pre-filled bug report link~~ — done: `Footer.tsx`'s "report a bug"
+    link now pre-fills the GitHub issue body with the exact current page
+    URL (which already encodes the whole selection via shareLink.ts),
+    plus locale, pinned game version, and `navigator.userAgent`. Built
+    fresh in the click handler itself (not on mount, not via an effect)
+    so it always reflects whatever's on screen at that moment with no
+    extra state to keep in sync; the plain unprefilled link stays as the
+    `href` fallback for no-JS or before hydration.

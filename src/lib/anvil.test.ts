@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { planAnvilCombines, planBuildUp } from "./anvil";
+import { planAnvilCombines, planBuildUp, summarizeShoppingList } from "./anvil";
+import { enchantmentById } from "./enchantments";
 
 describe("planAnvilCombines", () => {
   it("prices a single fresh-book application with zero prior-work penalty", () => {
@@ -74,5 +75,36 @@ describe("planBuildUp", () => {
     const fromScratch = planBuildUp(1, 0, 5)!;
     const fromLevelTwo = planBuildUp(1, 2, 5)!;
     expect(fromLevelTwo.level1BooksNeeded).toBeLessThan(fromScratch.level1BooksNeeded);
+  });
+});
+
+describe("summarizeShoppingList", () => {
+  // Cross-checked against the anvil optimizer's already-confirmed-live
+  // numbers above: Efficiency V (16 books/75 XP), Fortune III (4/30),
+  // Unbreaking III (4/16), Mending I needs no build-up (target level 1).
+  it("matches the pickaxe mining goal's known totals end to end", () => {
+    const targets = [
+      { id: "efficiency", level: 5 },
+      { id: "fortune", level: 3 },
+      { id: "unbreaking", level: 3 },
+      { id: "mending", level: 1 },
+    ];
+    const plan = planAnvilCombines(targets);
+    const buildUps = targets.map((t) => planBuildUp(enchantmentById(t.id).anvilCost, 0, t.level));
+    const totals = summarizeShoppingList(plan.totalCost, buildUps);
+
+    expect(plan.totalCost).toBe(38);
+    expect(totals.level1Books).toBe(25); // 16 + 4 + 4 + 1 (Mending needs just its own single Level 1 book)
+    expect(totals.totalXp).toBe(38 + 121); // main sequence + (75 + 30 + 16 + 0) build-up XP
+  });
+
+  it("needs exactly 1 level-1 book per step when nothing requires building up", () => {
+    const totals = summarizeShoppingList(10, [null, null, null]);
+    expect(totals.level1Books).toBe(3);
+    expect(totals.totalXp).toBe(10);
+  });
+
+  it("returns the main sequence cost unchanged when there are no steps at all", () => {
+    expect(summarizeShoppingList(0, [])).toEqual({ level1Books: 0, totalXp: 0 });
   });
 });

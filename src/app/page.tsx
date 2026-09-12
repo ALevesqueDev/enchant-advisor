@@ -4,7 +4,7 @@ import { Fragment, useEffect, useMemo, useReducer, useState } from "react";
 import { enchantmentById, enchantmentsFor } from "@/lib/enchantments";
 import { GOALS } from "@/lib/goals";
 import { recommend, untouchedCurrentEnchants } from "@/lib/recommend";
-import { planAnvilCombines, planBuildUp } from "@/lib/anvil";
+import { planAnvilCombines, planBuildUp, summarizeShoppingList } from "@/lib/anvil";
 import { computeBestMethods, type RankedMethod, type MethodDetail } from "@/lib/bestMethod";
 import { CATEGORY_ICON, rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
 import { enchantmentName, itemName, bareItemName, LOCALE_LABELS, type Locale } from "@/lib/i18n";
@@ -173,6 +173,23 @@ export default function Home() {
     .map((r) => ({ id: r.enchantId, level: r.targetLevel }));
   const anvilPlan = useMemo(() => planAnvilCombines(anvilTargets), [anvilTargets]);
   const currentLevelByEnchant = new Map(recommendations.map((r) => [r.enchantId, r.currentLevel]));
+
+  // Computed once here (rather than inline per-row in the JSX below) so
+  // the per-row display and the grand-total summary read from the exact
+  // same numbers instead of two separate calls that could drift apart.
+  const stepsWithBuildUp = anvilPlan.steps.map((s) => {
+    const enchant = enchantmentById(s.enchantId);
+    const buildUp = planBuildUp(enchant.anvilCost, currentLevelByEnchant.get(s.enchantId) ?? 0, s.level);
+    return { step: s, buildUp };
+  });
+
+  // Grand total across every recommended enchantment — the per-row numbers
+  // already existed, but there was never a single "here's everything
+  // you'll need" summary.
+  const shoppingList = summarizeShoppingList(
+    anvilPlan.totalCost,
+    stepsWithBuildUp.map(({ buildUp }) => buildUp)
+  );
 
   // "How do I get these?" — reuses bestMethod.ts's computeBestMethods (built
   // for search mode) so the advisor can answer that without the user
@@ -425,9 +442,7 @@ export default function Home() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--surface-border)]">
-                    {anvilPlan.steps.map((s, i) => {
-                      const enchant = enchantmentById(s.enchantId);
-                      const buildUp = planBuildUp(enchant.anvilCost, currentLevelByEnchant.get(s.enchantId) ?? 0, s.level);
+                    {stepsWithBuildUp.map(({ step: s, buildUp }, i) => {
                       return (
                         <Fragment key={s.enchantId}>
                           <tr className={s.tooExpensive ? "bg-[var(--status-conflict-bg)]" : undefined}>
@@ -474,6 +489,28 @@ export default function Home() {
                 <p className="mt-2 text-sm" style={{ color: "var(--status-conflict-fg)" }}>
                   {t("anvilTooExpensive", locale)}
                 </p>
+              )}
+
+              {/* Only worth a separate summary when it actually adds
+                  something over the badge above — i.e. at least one
+                  enchant needs building up from Level 1 first. */}
+              {shoppingList.totalXp > anvilPlan.totalCost && (
+                <div className="panel mt-3 p-4">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+                    {t("shoppingListHeader", locale)}
+                  </h3>
+                  <div className="mt-3 grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="font-display text-2xl font-bold accent-text">{shoppingList.level1Books}</div>
+                      <div className="text-xs text-muted">{t("shoppingListBooksLabel", locale)}</div>
+                    </div>
+                    <div>
+                      <div className="font-display text-2xl font-bold accent-text">{shoppingList.totalXp}</div>
+                      <div className="text-xs text-muted">{t("shoppingListXpLabel", locale)}</div>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs text-muted">{t("shoppingListNote", locale)}</p>
+                </div>
               )}
             </section>
           )}

@@ -56,6 +56,14 @@ const UI = {
     fr: "⚠ Au moins une étape dépasse 39 niveaux — l'enclume refusera l'opération (\"Too Expensive!\") en survie/aventure. Retire un objectif de moindre priorité, ou termine ce combo en mode créatif.",
   },
 
+  shoppingListHeader: { en: "📋 Everything you'll need", fr: "📋 Tout ce qu'il te faut" },
+  shoppingListBooksLabel: { en: "Level 1 books to prepare", fr: "Livres niveau 1 à préparer" },
+  shoppingListXpLabel: { en: "XP levels, start to finish", fr: "Niveaux d'XP, du début à la fin" },
+  shoppingListNote: {
+    en: "Includes building up any enchantment you can't get directly at its target level (see the notes above), not just the main combine sequence.",
+    fr: "Inclut la construction de tout enchantement qu'on ne peut pas obtenir directement à son niveau visé (voir les notes ci-dessus), pas juste la séquence de combinaison principale.",
+  },
+
   advisorAcquisitionButton: { en: "✦ How do I get these?", fr: "✦ Comment obtenir ça?" },
   advisorAcquisitionCalculating: { en: "Calculating…", fr: "Calcul en cours…" },
   advisorAcquisitionBestWay: { en: "Best way to get it:", fr: "Meilleure façon de l'obtenir :" },

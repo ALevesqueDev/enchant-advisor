@@ -176,3 +176,34 @@ export function planBuildUp(anvilCost: number, fromLevel: number, toLevel: numbe
     anyTooExpensive: steps.some((s) => s.tooExpensive),
   };
 }
+
+export interface ShoppingListTotals {
+  /** Every step needs exactly one Level 1 book by itself (trivially, if the target level is 1) or as the seed of a build-up chain. */
+  level1Books: number;
+  /** The main combine sequence's own cost (AnvilPlan.totalCost) plus every step's build-up cost, if any. */
+  totalXp: number;
+}
+
+/**
+ * Grand total across every step of an anvil plan — the level-1 books and
+ * XP levels needed from nothing, not just the main combine sequence's own
+ * cost (which assumes every book already exists at its target level).
+ * Deliberately NOT lapis lazuli: verified against the anvil mechanics
+ * page (cross-checked against an independent guide) that the anvil has
+ * never consumed lapis for any operation, in any version — that's an
+ * enchanting-table-only cost. An earlier draft of this feature assumed
+ * otherwise from memory; caught before shipping by verifying instead of
+ * trusting recall, same discipline as everywhere else in this file.
+ */
+export function summarizeShoppingList(
+  mainSequenceCost: number,
+  buildUps: Array<BuildUpPlan | null>
+): ShoppingListTotals {
+  let level1Books = 0;
+  let buildUpXp = 0;
+  for (const buildUp of buildUps) {
+    level1Books += buildUp ? buildUp.level1BooksNeeded : 1;
+    buildUpXp += buildUp ? buildUp.totalCost : 0;
+  }
+  return { level1Books, totalXp: mainSequenceCost + buildUpXp };
+}

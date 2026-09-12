@@ -471,9 +471,17 @@ Bedrock Edition support was considered and explicitly rejected (see below)
    whenever the target set changes (compared by a derived key at render
    time, not reset via an Effect — kept to React's own guidance on
    deriving instead of synchronizing state).
-2. **Aggregate shopping-list totals** — a grand total (level-1 books, XP
-   levels, lapis) across every recommended enchantment in one anvil plan,
-   not just the existing per-row numbers.
+2. ~~Aggregate shopping-list totals~~ — done (v1.2.0): a grand total
+   (level-1 books, XP levels) across every recommended enchantment in one
+   anvil plan, not just the existing per-row numbers — extracted as
+   `summarizeShoppingList()` in `anvil.ts` (pure, tested) rather than left
+   inline in `page.tsx`. Originally proposed with a third number, lapis
+   lazuli — **dropped before implementing**: verified (2+ independently
+   corroborated sources) that the anvil has never consumed lapis for any
+   operation, in any Java version; that's an enchanting-table-only cost.
+   The original proposal was wrong, from memory, not from checking — the
+   kind of mistake this project's whole sourcing discipline exists to
+   catch, so it's worth naming here rather than quietly fixing it.
 3. **Enchantment conflicts shown in search mode** — reuse
    `incompatibleWith` (already verified against raw game data) to show
    what a searched enchantment can't be combined with, without needing to

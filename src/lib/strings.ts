@@ -105,6 +105,7 @@ const UI = {
     fr: "Simulation Monte-Carlo de l'algorithme réel du jeu, incluant la règle propre aux livres qui retire un enchantement si plusieurs sortent — voir src/lib/tableOdds.ts.",
   },
   searchSourcesHeader: { en: "Sources and odds", fr: "Sources et probabilités" },
+  searchIncompatibleWith: { en: "Incompatible with:", fr: "Incompatible avec :" },
 
   sourceFishing: { en: "Fishing", fr: "Pêche" },
   sourceTrading: { en: "Trading (librarian)", fr: "Commerce (bibliothécaire)" },

@@ -174,6 +174,16 @@ export default function SearchMode() {
           </select>
         </div>
         <p className="mt-1.5 text-xs text-muted">{rarityLabel(rarity, locale)}</p>
+        {/* incompatibleWith is derived from the real exclusive_set tag
+            data (see enchantments.ts), not hand-typed — surfacing it here
+            means you can see this without switching to the advisor, which
+            already shows it per-item via recommend()'s conflict detection. */}
+        {enchant.incompatibleWith.length > 0 && (
+          <p className="mt-1 text-xs text-muted">
+            {t("searchIncompatibleWith", locale)}{" "}
+            {enchant.incompatibleWith.map((id) => enchantmentName(id, locale)).join(", ")}
+          </p>
+        )}
       </section>
 
       <section className="panel mt-4 flex flex-wrap items-end gap-4 p-4">

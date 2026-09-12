@@ -482,10 +482,12 @@ Bedrock Edition support was considered and explicitly rejected (see below)
    The original proposal was wrong, from memory, not from checking — the
    kind of mistake this project's whole sourcing discipline exists to
    catch, so it's worth naming here rather than quietly fixing it.
-3. **Enchantment conflicts shown in search mode** — reuse
-   `incompatibleWith` (already verified against raw game data) to show
-   what a searched enchantment can't be combined with, without needing to
-   switch to the advisor to discover that.
+3. ~~Enchantment conflicts shown in search mode~~ — done (v1.3.0): reuses
+   `incompatibleWith` (already derived from the real `exclusive_set` tag
+   data, see `enchantments.ts`) to show what the searched enchantment
+   can't be combined with, right next to the rarity line — no need to
+   switch to the advisor to discover that, which already showed the same
+   thing per-item via `recommend()`'s conflict detection.
 4. **Anvil build-up interleaving optimizer** — bigger, deliberately
    scoped separately (see `anvil.ts`'s header on why the current model
    treats "getting a book to the target level" and "combining books onto

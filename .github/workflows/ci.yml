@@ -1,0 +1,29 @@
+name: CI
+
+# Runs on every push and PR — lint/test/build used to only run when
+# invoked manually here in local dev, which meant a regression in the
+# Vitest suite (see PROJECT.md's test-suite roadmap entry) or a build
+# break could sit unnoticed until someone happened to run it by hand.
+on:
+  push:
+  pull_request:
+  workflow_dispatch: {}
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "npm"
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run test
+
+      - run: npm run build

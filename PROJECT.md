@@ -306,3 +306,34 @@ no-accounts design).
     so it always reflects whatever's on screen at that moment with no
     extra state to keep in sync; the plain unprefilled link stays as the
     `href` fallback for no-JS or before hydration.
+
+Another small reliability/UX-polish batch, same spirit as items 12-16 —
+nothing new user-facing, nothing that adds runtime weight.
+
+17. ~~CI on every push/PR~~ — done: `.github/workflows/ci.yml` runs
+    `npm ci && npm run lint && npm run test && npm run build` on every
+    push and PR (alongside the existing weekly version-freshness Action),
+    closing the loop on the Vitest suite (item 13) actually being
+    enforced going forward instead of relying on remembering to run it by
+    hand. Setting this up caught a real, pre-existing problem: the
+    committed `package-lock.json` had gone subtly out of sync with
+    `node_modules` (a nested optional dependency pinned to conflicting
+    versions in different parts of the tree, most likely dating from the
+    Vitest install) — invisible to plain `npm install`, but `npm ci`
+    (what CI and every teammate's clean clone actually uses) refused to
+    install from it at all. Fixed by regenerating the lockfile from
+    scratch.
+18. **Custom 404 page** — a mistyped URL currently hits Next's unstyled
+    default not-found page. A `not-found.tsx` matching the app's look
+    (same panel/accent styling as everywhere else) with a link back to
+    `/` is a few lines, no new dependency.
+19. **Open Graph / social preview metadata** — shareable links (the app's
+    own headline feature) currently paste into Discord/Reddit/etc. as a
+    bare URL with no preview. Adding `openGraph`/`twitter` metadata
+    (title, description, one static preview image) makes a shared link
+    actually show something — directly reinforces the shareable-builds
+    feature rather than being a separate concern.
+20. **Print stylesheet** — pure CSS (`@media print`), no JS: hides the
+    buttons/toggles and keeps just the tables (recommendation, anvil
+    cost, search odds) for anyone who wants a paper copy next to their
+    real enchanting table.

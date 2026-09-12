@@ -511,3 +511,38 @@ ceiling on the confidence this project could ever put behind a Bedrock
 number, in a codebase whose whole credibility rests on "verified against
 real generated data, not a wiki summary" (see the Cleaving/wind_burst
 incidents above) — not worth compromising that principle for.
+
+## Discoverability (v1.4.0)
+
+Everything here is entirely within Claude Code's own reach — no external
+account, no publishing on the user's behalf:
+
+- **GitHub repo topics** — added via `gh repo edit --add-topic`
+  (`minecraft`, `minecraft-java`, `enchanting`, `enchantment-calculator`,
+  `anvil-calculator`, `nextjs`, `typescript`, `pwa`, `free-tool`,
+  `bilingual`, `monte-carlo-simulation`, `minecraft-tools`) — the repo had
+  none at all before this, a free/zero-risk GitHub-search win.
+- **`src/app/sitemap.ts` / `src/app/robots.ts`** — Next's file
+  conventions, auto-served at `/sitemap.xml`/`/robots.txt`. A single-page
+  app only has one URL to list, but it's still a canonical-entry-point
+  signal crawlers otherwise have to guess at.
+- **JSON-LD structured data** (`WebApplication` schema, in `layout.tsx`)
+  — tells search engines this is a free installable tool, not a blog
+  post, which is what can unlock rich-result treatment.
+- **Richer, bilingual `description`/`keywords` metadata** — the
+  description used to be French-only; most enchantment-calculator
+  searches skew English even from French speakers, so it now leads with
+  an English sentence. Kept as one natural-reading description, not
+  keyword-stuffed, since search engines discount/penalize that.
+- **`alternates.canonical`** — removes ambiguity for crawlers about which
+  URL variant (trailing slash, a shared link's query params, etc.) is the
+  one to index.
+
+**Explicitly NOT done, and can't be from here**: actually submitting the
+site to Google Search Console (needs the user's own Google account),
+posting to Reddit/Discord communities (needs the user's own accounts,
+plus each community's self-promo rules checked first), and a demo GIF/
+video (needs a connected browser tool, unavailable this session). The
+user's own existing Minecraft community (the JDL server/LAN party
+players) remains the highest-trust, lowest-effort channel and isn't
+something Claude Code can act on at all.

@@ -5,6 +5,7 @@
 
 import type { Locale } from "./i18n";
 import type { EnchantingSlot } from "./tableOdds";
+import type { MethodKind } from "./bestMethod";
 
 const UI = {
   heroTagline: {
@@ -93,6 +94,15 @@ const UI = {
   sourceTrading: { en: "Trading (librarian)", fr: "Commerce (bibliothécaire)" },
   sourceStructureOnly: { en: "Structure loot only", fr: "Butin de structure uniquement" },
 
+  searchBestMethodHeader: { en: "Best method", fr: "Meilleure méthode" },
+  searchBestMethodCaveat: {
+    en: "Ranked by odds per attempt — but an attempt doesn't cost the same everywhere: a table roll spends XP levels and consumes the item/book, a trading reroll costs a lectern plus emeralds, a fishing cast only costs time. Weigh that against the numbers below.",
+    fr: "Classé par probabilité par tentative — mais une tentative ne coûte pas la même chose partout : un lancer de table coûte des niveaux d'XP et consomme l'objet/livre, un reroll de commerce coûte un lutrin et des émeraudes, un lancer de pêche ne coûte que du temps. À pondérer avec les chiffres ci-dessous.",
+  },
+  methodTableItem: { en: "Table (on the item)", fr: "Table (sur l'objet)" },
+  methodTableBook: { en: "Table (book)", fr: "Table (livre)" },
+  neverAtThisLevel: { en: "essentially never at this level", fr: "quasiment jamais à ce niveau" },
+
   rarityCommon: { en: "Common", fr: "Commun" },
   rarityUncommon: { en: "Uncommon", fr: "Peu commun" },
   rarityRare: { en: "Rare", fr: "Rare" },
@@ -145,6 +155,27 @@ const SLOT_KEY: Record<EnchantingSlot, UiKey> = { top: "slotTop", middle: "slotM
 
 export function slotLabel(slot: EnchantingSlot, locale: Locale): string {
   return t(SLOT_KEY[slot], locale);
+}
+
+const METHOD_KEY: Record<MethodKind, UiKey> = {
+  table_item: "methodTableItem",
+  table_book: "methodTableBook",
+  trading: "sourceTrading",
+  fishing: "sourceFishing",
+};
+
+export function methodLabel(kind: MethodKind, locale: Locale): string {
+  return t(METHOD_KEY[kind], locale);
+}
+
+/** "≈4 attempts on average" / "essentially never at this level" for an Infinity (zero-probability) case. */
+export function expectedAttemptsNote(expectedAttempts: number, locale: Locale): string {
+  if (!Number.isFinite(expectedAttempts)) return t("neverAtThisLevel", locale);
+  const rounded =
+    expectedAttempts < 10
+      ? expectedAttempts.toFixed(1)
+      : Math.round(expectedAttempts).toLocaleString(locale === "en" ? "en-US" : "fr-FR");
+  return locale === "en" ? `≈${rounded} attempts on average` : `≈${rounded} essais en moyenne`;
 }
 
 export function levelTargetNote(currentLevel: number, targetLevel: number, locale: Locale): string {

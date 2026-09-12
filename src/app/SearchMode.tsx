@@ -3,11 +3,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { ENCHANTMENTS, enchantmentById } from "@/lib/enchantments";
 import { materialsFor, enchantability, type Material } from "@/lib/materials";
-import { findBestTableOdds, findBestBookOdds, slotLevelRange, type BestTableCombo, type BestBookSlot } from "@/lib/tableOdds";
+import {
+  findBestTableOdds,
+  findBestBookOdds,
+  slotLevelRange,
+  type BestTableCombo,
+  type BestBookSlot,
+  type EnchantingSlot,
+} from "@/lib/tableOdds";
 import { treasureOdds, treasureSourceNote, isStructureLootOnly, type TreasureOddsResult } from "@/lib/treasure";
+import { rankMethods, type RankableMethod } from "@/lib/bestMethod";
 import { rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
 import { enchantmentName, itemName, bareItemName } from "@/lib/i18n";
-import { t, slotLabel } from "@/lib/strings";
+import { t, slotLabel, methodLabel, expectedAttemptsNote } from "@/lib/strings";
 import { readShareParams, patchShareParams } from "@/lib/shareLink";
 import { useLocale } from "./LocaleContext";
 import type { ItemCategory } from "@/lib/types";
@@ -24,6 +32,12 @@ interface Results {
   table: BestTableCombo[] | null;
   book: BestBookSlot[] | null;
   tradeAndFish: TreasureOddsResult[] | null;
+}
+
+/** material only applies to the table_item method; slot to both table methods. */
+interface MethodDetail {
+  material?: string;
+  slot?: EnchantingSlot;
 }
 
 export default function SearchMode() {
@@ -87,6 +101,28 @@ export default function SearchMode() {
   }, [enchantId, level, category, luckOfTheSea, bookshelves]);
 
   const structureOnly = isStructureLootOnly(enchantId);
+
+  // Ranks every method that has a number at all (a category might have no
+  // table odds computed for a treasure enchant, or no trade/fish odds for
+  // a structure-only one) by odds per attempt — see bestMethod.ts's header
+  // for why this stays a ranking rather than a single verdict.
+  const bestMethods = useMemo(() => {
+    if (!results) return null;
+    const methods: RankableMethod<MethodDetail>[] = [];
+    const bestTable = results.table?.[0];
+    if (bestTable) {
+      methods.push({ kind: "table_item", probability: bestTable.probability, detail: { material: bestTable.material, slot: bestTable.slot } });
+    }
+    const bestBook = results.book?.[0];
+    if (bestBook) {
+      methods.push({ kind: "table_book", probability: bestBook.probability, detail: { slot: bestBook.slot } });
+    }
+    for (const r of results.tradeAndFish ?? []) {
+      if (r.source === "trading") methods.push({ kind: "trading", probability: r.probability });
+      if (r.source === "fishing") methods.push({ kind: "fishing", probability: r.probability });
+    }
+    return methods.length > 0 ? rankMethods(methods) : null;
+  }, [results]);
 
   function changeEnchant(id: string) {
     const e = enchantmentById(id);
@@ -247,6 +283,46 @@ export default function SearchMode() {
         </p>
       )}
       {!enchant.treasureOnly && <p className="mt-3 text-xs text-muted">{t("searchBookshelvesNote", locale)}</p>}
+
+      {bestMethods && (
+        <section className="mt-6">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+            {t("searchBestMethodHeader", locale)}
+          </h3>
+          <div className="mt-3 space-y-2">
+            {bestMethods.map((m, i) => (
+              <div
+                key={m.kind}
+                className={`panel flex items-center gap-3 p-3 ${i === 0 ? "glint ring-1 ring-[var(--accent-solid)]" : ""}`}
+              >
+                {/* Decorative — rank is already conveyed by list order and the % shown right after. */}
+                <span aria-hidden="true" className="w-6 shrink-0 text-center text-base">
+                  {RANK_MEDAL[i] ?? i + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-sm font-medium">
+                      {methodLabel(m.kind, locale)}
+                      {m.kind === "table_item" && m.detail?.slot && (
+                        <>
+                          {" "}
+                          · {itemName(category, m.detail.material as Material, locale)} · {slotLabel(m.detail.slot, locale)}
+                        </>
+                      )}
+                      {m.kind === "table_book" && m.detail?.slot && <> · {slotLabel(m.detail.slot, locale)}</>}
+                    </span>
+                    <span className="font-display shrink-0 text-sm font-bold accent-text">
+                      {(m.probability * 100).toFixed(m.kind === "trading" || m.kind === "fishing" ? 3 : 1)}%
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted">{expectedAttemptsNote(m.expectedAttempts, locale)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-muted">{t("searchBestMethodCaveat", locale)}</p>
+        </section>
+      )}
 
       {results?.table && (
         <section className="mt-6">

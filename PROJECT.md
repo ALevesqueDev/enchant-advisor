@@ -357,3 +357,20 @@ nothing new user-facing, nothing that adds runtime weight.
     plain black for print instead. Forces the light color palette
     regardless of system dark-mode preference, since nobody wants a
     near-black page eating a print cartridge.
+
+21. ~~Best-method recommendation~~ — done, requested directly by the user
+    rather than from the roadmap batches above: search mode now ranks
+    every acquisition method (table on the item, table on a book,
+    villager trading, fishing) by odds per attempt in one "Best method"
+    section at the top of the results, instead of leaving the user to
+    compare four separate sections by eye. `src/lib/bestMethod.ts` is a
+    small, pure, tested ranking function (`rankMethods()` — probability
+    → sorted list + expected-attempts-on-average, `1/probability`).
+    Deliberately a ranking, not a single verdict: an attempt doesn't cost
+    the same everywhere (a table roll spends XP levels and consumes the
+    item/book, a trade reroll costs a lectern plus emeralds, a fishing
+    cast only costs time) — a caveat sentence says so explicitly rather
+    than pretending the comparison is perfectly fair. Sanity-checked
+    manually for Efficiency III on a pickaxe with 15 bookshelves: table
+    ≈2 expected attempts, book ≈19, trading ≈67, fishing ≈2099 — the
+    ranking behaves exactly as expected.

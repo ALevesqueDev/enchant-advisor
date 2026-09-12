@@ -46,3 +46,6 @@ next-env.d.ts
 # config, and stays tracked — see its own header comment.)
 CLAUDE.md
 .claude/
+
+.vercel
+.env*

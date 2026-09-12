@@ -110,6 +110,13 @@ const UI = {
   shareCopyLink: { en: "🔗 Copy link", fr: "🔗 Copier le lien" },
   shareCopied: { en: "✓ Link copied!", fr: "✓ Lien copié !" },
 
+  notFoundTitle: { en: "Page not found", fr: "Page introuvable" },
+  notFoundBody: {
+    en: "There's nothing at this address. The app itself lives at a single page — you probably want that one.",
+    fr: "Il n'y a rien à cette adresse. L'app tient sur une seule page — c'est probablement celle-là que tu cherches.",
+  },
+  notFoundBackHome: { en: "← Back to Enchant Advisor", fr: "← Retour à Enchant Advisor" },
+
   footerReportLink: { en: "🐙 Report a bug / suggest an improvement", fr: "🐙 Signaler un bug / suggérer une amélioration" },
   opensInNewTab: { en: "(opens in a new tab)", fr: "(ouvre un nouvel onglet)" },
   offlineBanner: {

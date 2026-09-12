@@ -323,10 +323,12 @@ nothing new user-facing, nothing that adds runtime weight.
     (what CI and every teammate's clean clone actually uses) refused to
     install from it at all. Fixed by regenerating the lockfile from
     scratch.
-18. **Custom 404 page** — a mistyped URL currently hits Next's unstyled
-    default not-found page. A `not-found.tsx` matching the app's look
-    (same panel/accent styling as everywhere else) with a link back to
-    `/` is a few lines, no new dependency.
+18. ~~Custom 404 page~~ — done: `src/app/not-found.tsx` (Next's file
+    convention) matches the app's look and, unlike `error.tsx`/
+    `global-error.tsx`, safely uses the real `useLocale()` — a 404 isn't
+    a crash, so there's nothing to be defensive about. Verified with a
+    real request to a nonexistent path locally (HTTP 404, correct
+    bilingual copy rendered).
 19. **Open Graph / social preview metadata** — shareable links (the app's
     own headline feature) currently paste into Discord/Reddit/etc. as a
     bare URL with no preview. Adding `openGraph`/`twitter` metadata

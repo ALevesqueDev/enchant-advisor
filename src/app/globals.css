@@ -129,6 +129,8 @@ body {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
   animation: glint-sweep 2.8s ease-in-out infinite;
   animation-delay: 1s;
+  /* Decorative only — never intercept taps/clicks meant for the element it's on. */
+  pointer-events: none;
 }
 
 .accent-gradient {

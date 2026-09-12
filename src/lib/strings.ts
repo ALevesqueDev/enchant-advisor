@@ -14,6 +14,7 @@ const UI = {
   modeSearch: { en: "Enchantment Search", fr: "Recherche d'enchantement" },
 
   step1Item: { en: "Item", fr: "Objet" },
+  step1Material: { en: "Material", fr: "Matériau" },
   step2CurrentEnchants: { en: "Enchantments already on the item", fr: "Enchantements déjà sur l'objet" },
   step3Goal: { en: "Goal", fr: "Objectif" },
   step4Recommendation: { en: "Recommendation", fr: "Recommandation" },

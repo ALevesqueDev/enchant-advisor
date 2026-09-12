@@ -133,19 +133,28 @@ Item and enchantment names are the REAL names Minecraft itself uses in each
 language — extracted from the game's own `en_us.json`/`fr_fr.json` at our
 pinned version (`src/lib/enchantment-names.json`, `src/lib/item-names.json`),
 not a machine translation. A locale toggle (`src/app/LocaleContext.tsx`,
-persisted to localStorage) switches every item/enchantment name shown; the
-app's own UI chrome (buttons, section headers, goal descriptions) stays
-French-only for now — that's a deliberate scope line, not an oversight, since
-those aren't official game strings and translating them well is a separate
-piece of work. Re-extract both name files whenever `game-version.json` bumps,
-same source, tag `<version>-assets`.
+persisted to localStorage) switches every item/enchantment name shown, AND
+every UI string (`src/lib/strings.ts` — our own copy, hand-written in both
+languages since none of it is official game text). Re-extract the two name
+files whenever `game-version.json` bumps, same source, tag `<version>-assets`.
 
 The "category" concept (e.g. "pickaxe" without a material) isn't a real
-Minecraft concept — every real name is material-specific. Where a
-material-agnostic label is needed (the advisor's item picker), Diamond
-stands in as the representative tier ("Diamond Pickaxe" / "Pioche en
-diamant"); the search mode's ranked results show the item's actual matched
-material instead.
+Minecraft concept — every real name is material-specific. The advisor's item
+picker (step 1) now has an explicit material selector next to the category
+grid, defaulting to Diamond; the selected category's own button reflects
+whatever material is chosen (e.g. "Iron Pickaxe" once picked), while the
+other 15 buttons keep showing their Diamond-tier name as a neutral preview.
+Search mode's ranked results already showed the item's actual matched
+material per row.
+
+**The material choice is display-only in the advisor** — `recommend()` and
+`planAnvilCombines()` don't take material as an input at all, since neither
+the enchantment recommendation nor the anvil XP cost actually depends on
+what the tool/armor is made of in this game (only the enchanting *table*
+does, via enchantability — that's what `materialsFor`/`enchantability` in
+`materials.ts` already feed into search mode's Monte-Carlo sweep). If a
+future feature needs material to affect the advisor's own output, this is
+the seam to extend, not a new one.
 
 ## Roadmap
 
@@ -154,31 +163,30 @@ on which of these you actually want first.
 
 1. ~~Data-freshness check script~~ — done, see Version pinning above.
 2. ~~Bilingual item/enchantment names~~ — done, see Localization above.
-3. **Full UI localization** — the app's own copy (buttons, section headers,
-   goal names) is still French-only regardless of the name-locale toggle;
-   worth doing once the phrasing has settled, so it isn't re-translated
-   every time UI text changes.
-4. **Book-enchanting mode** — both the anvil calculator and the table-odds
+3. ~~Full UI localization~~ — done, see Localization above (`src/lib/strings.ts`).
+4. ~~Advisor material/tier selector~~ — done: step 1 now has an explicit
+   material picker instead of silently assuming Diamond.
+5. **Book-enchanting mode** — both the anvil calculator and the table-odds
    simulator currently model enchanting the item directly. Enchanting a
    book first (then anvil-transferring it) is a very common real strategy
    and has slightly different rules (the "-1 enchantment" quirk for books —
    see `tableOdds.ts`).
-5. **Full anvil optimizer** — model pre-combining two low-level books into
+6. **Full anvil optimizer** — model pre-combining two low-level books into
    a higher-level one before it ever touches the final item, which is where
    combine *order* actually starts to affect total cost (today's calculator
    correctly says order doesn't matter, but only because it doesn't model
    this cheaper path).
-6. **Shareable builds** — serialize the current item/enchants/goal (or
+7. **Shareable builds** — serialize the current item/enchants/goal (or
    search) selection into the URL query string so a link can be shared
    without needing any backend/accounts.
-7. **Bookshelf-count helper** — let the user pick "0-15 bookshelves"
+8. **Bookshelf-count helper** — let the user pick "0-15 bookshelves"
    instead of typing the displayed level directly, matching what they
    actually see at their own table.
-8. **Mobile QA pass** — one real click-blocking bug already surfaced
+9. **Mobile QA pass** — one real click-blocking bug already surfaced
    (`.glint::after` missing `pointer-events: none`) from the visual
    redesign; worth a dedicated pass across both modes on a real phone.
-9. **PWA support** — add a manifest + service worker so it can be
-   "installed" to a phone home screen. Purely cosmetic (it's still a web
-   app under the hood) but closes the "is this an app?" question for good.
-10. ~~Public repo + license~~ — done: the repo is public, all rights
+10. **PWA support** — add a manifest + service worker so it can be
+    "installed" to a phone home screen. Purely cosmetic (it's still a web
+    app under the hood) but closes the "is this an app?" question for good.
+11. ~~Public repo + license~~ — done: the repo is public, all rights
     reserved (see LICENSE), and the footer's GitHub Issues link works.

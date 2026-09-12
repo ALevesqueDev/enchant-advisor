@@ -6,7 +6,8 @@ import { GOALS } from "@/lib/goals";
 import { recommend, untouchedCurrentEnchants } from "@/lib/recommend";
 import { planAnvilCombines } from "@/lib/anvil";
 import { CATEGORY_ICON, rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
-import { enchantmentName, representativeItemName, LOCALE_LABELS, type Locale } from "@/lib/i18n";
+import { enchantmentName, itemName, representativeItemName, LOCALE_LABELS, type Locale } from "@/lib/i18n";
+import { materialsFor, type Material } from "@/lib/materials";
 import { t, blockedByNote, levelTargetNote } from "@/lib/strings";
 import { useLocale } from "./LocaleContext";
 import type { EnchantSet, ItemCategory } from "@/lib/types";
@@ -14,6 +15,13 @@ import SearchMode from "./SearchMode";
 import Footer from "./Footer";
 
 const CATEGORIES = Object.keys(ITEM_CATEGORY_LABELS) as ItemCategory[];
+
+/** Diamond is the sensible default when a category has material variants — most commonly referenced tier. */
+function defaultMaterialFor(category: ItemCategory): Material | undefined {
+  const materials = materialsFor(category);
+  if (materials.length === 0) return undefined;
+  return materials.includes("diamond") ? "diamond" : materials[0];
+}
 
 function SectionLabel({ index, children }: { index: string; children: React.ReactNode }) {
   return (
@@ -59,6 +67,7 @@ export default function Home() {
   const { locale, setLocale } = useLocale();
   const [mode, setMode] = useState<"advisor" | "search">("advisor");
   const [category, setCategory] = useState<ItemCategory>("pickaxe");
+  const [material, setMaterial] = useState<Material | undefined>(defaultMaterialFor("pickaxe"));
   const [current, setCurrent] = useState<EnchantSet>({});
   const [goalId, setGoalId] = useState<string>(GOALS["pickaxe"][0].id);
 
@@ -81,9 +90,12 @@ export default function Home() {
 
   function changeCategory(next: ItemCategory) {
     setCategory(next);
+    setMaterial(defaultMaterialFor(next));
     setCurrent({});
     setGoalId(GOALS[next][0].id);
   }
+
+  const materialOptions = materialsFor(category);
 
   function setLevel(enchantId: string, level: number) {
     setCurrent((prev) => {
@@ -155,10 +167,29 @@ export default function Home() {
                   }`}
                 >
                   <span className="text-xl">{CATEGORY_ICON[c]}</span>
-                  {representativeItemName(c, locale)}
+                  {c === category ? itemName(c, material, locale) : representativeItemName(c, locale)}
                 </button>
               ))}
             </div>
+
+            {materialOptions.length > 0 && (
+              <div className="mt-3">
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  {t("step1Material", locale)}
+                </label>
+                <select
+                  value={material}
+                  onChange={(ev) => setMaterial(ev.target.value as Material)}
+                  className="mt-1.5 block w-full rounded-md border border-[var(--surface-border)] bg-[var(--surface-raised)] px-2 py-1.5 text-sm sm:w-auto"
+                >
+                  {materialOptions.map((m) => (
+                    <option key={m} value={m}>
+                      {itemName(category, m, locale)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </section>
 
           {/* Step 2: current enchants */}

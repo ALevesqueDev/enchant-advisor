@@ -21,18 +21,10 @@ export type Material =
   | "chainmail"
   | "turtle_shell";
 
-export const MATERIAL_LABELS: Record<Material, string> = {
-  wood: "Bois",
-  stone: "Pierre",
-  iron: "Fer",
-  golden: "Or",
-  diamond: "Diamant",
-  netherite: "Netherite",
-  copper: "Cuivre",
-  leather: "Cuir",
-  chainmail: "Cotte de mailles",
-  turtle_shell: "Carapace de tortue",
-};
+// Material display names live in i18n.ts's itemName(category, material,
+// locale) — the real, full item name in both languages (e.g. "Iron
+// Pickaxe" / "Pioche en fer"), not a French-only bare material label like
+// this file used to keep.
 
 const TOOL_ENCHANTABILITY: Partial<Record<Material, number>> = {
   wood: 15,

@@ -212,9 +212,21 @@ on which of these you actually want first.
    URL is read once and every field is validated against real categories/
    materials/goals/enchantment ids before being applied; anything missing
    or stale just falls back to the normal defaults instead of crashing.
-8. **Bookshelf-count helper** — let the user pick "0-15 bookshelves"
-   instead of typing the displayed level directly, matching what they
-   actually see at their own table.
+8. ~~Bookshelf-count helper~~ — done: search mode's table/book odds used
+   to sweep an abstract "displayed level 1-30", which isn't something a
+   player can actually type in at a real table — only a bookshelf count
+   (0-15) and then one of 3 slots are ever in their control. Replaced that
+   sweep with the real bookshelf → per-slot-level formula
+   (`slotLevelRange`/`rollSlotLevel` in `tableOdds.ts`), verified against
+   minecraft.wiki/w/Enchanting_mechanics on 2026-09-12 — though only the
+   *formula itself*, not the page's own prose summary of it, which
+   contradicted its own formula on bookshelf-count ranges (same
+   don't-trust-the-paraphrase lesson as the Cleaving/wind_burst incidents
+   above). Cross-checked by simulating it directly: 15 bookshelves
+   deterministically gives a level-30 bottom slot, matching the game's
+   best-known fact about full bookshelf rooms. Results are now reported as
+   "material × slot" (top/middle/bottom) instead of "material × level",
+   each with the real achievable level range shown alongside for context.
 9. **Mobile QA pass** — one real click-blocking bug already surfaced
    (`.glint::after` missing `pointer-events: none`) from the visual
    redesign; worth a dedicated pass across both modes on a real phone.

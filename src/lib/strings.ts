@@ -4,6 +4,7 @@
 // anywhere external.
 
 import type { Locale } from "./i18n";
+import type { EnchantingSlot } from "./tableOdds";
 
 const UI = {
   heroTagline: {
@@ -57,6 +58,14 @@ const UI = {
   searchEnchantmentLabel: { en: "Enchantment to search for", fr: "Enchantement recherché" },
   searchLevelLabel: { en: "Target level", fr: "Niveau visé" },
   searchItemLabel: { en: "Item", fr: "Objet" },
+  searchBookshelvesLabel: { en: "Bookshelves around your table", fr: "Étagères autour de ta table" },
+  searchBookshelvesNote: {
+    en: "Only the first 15 count. Your table re-rolls what each of the 3 slots shows every time you touch your inventory — this simulates that randomness instead of assuming a fixed table level.",
+    fr: "Seules les 15 premières comptent. Ta table retire au hasard ce que chacun des 3 emplacements affiche à chaque fois que tu touches ton inventaire — ceci simule ce hasard plutôt que de supposer un niveau de table fixe.",
+  },
+  slotTop: { en: "Top slot", fr: "Emplacement du haut" },
+  slotMiddle: { en: "Middle slot", fr: "Emplacement du milieu" },
+  slotBottom: { en: "Bottom slot", fr: "Emplacement du bas" },
   searchBookNote: {
     en: "A book gets the same roll as an item, but if more than one enchantment comes up, one is discarded at random — books have lower odds of stacking extras than the item they'll end up transferred onto.",
     fr: "Un livre suit le même tirage qu'un objet, mais si plusieurs enchantements sortent, l'un d'eux est retiré au hasard — un livre a moins de chances de cumuler des extras que l'objet sur lequel il sera transféré.",
@@ -118,6 +127,12 @@ export function blockedByNote(blockerName: string, locale: Locale): string {
   return locale === "en"
     ? `Blocked by ${blockerName} already on the item`
     : `Bloqué par ${blockerName} déjà sur l'objet`;
+}
+
+const SLOT_KEY: Record<EnchantingSlot, UiKey> = { top: "slotTop", middle: "slotMiddle", bottom: "slotBottom" };
+
+export function slotLabel(slot: EnchantingSlot, locale: Locale): string {
+  return t(SLOT_KEY[slot], locale);
 }
 
 export function levelTargetNote(currentLevel: number, targetLevel: number, locale: Locale): string {

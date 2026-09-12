@@ -28,6 +28,60 @@
 import { enchantmentsFor, nonTreasurePool } from "./enchantments";
 import type { Enchantment, ItemCategory } from "./types";
 
+/**
+ * Bookshelf → displayed-level mechanics. Formula verified against
+ * minecraft.wiki/w/Enchanting_mechanics on 2026-09-12 — but only the
+ * *formula itself* and the well-known "15 bookshelves guarantees a
+ * level-30 bottom slot" fact it reproduces exactly, not the page's own
+ * prose summary of it, which claimed a bookshelf-count range that
+ * contradicted its own formula. Same lesson as the Cleaving/wind_burst
+ * incidents in PROJECT.md: verify by computing, don't trust a paraphrase.
+ *
+ *   xpBase = 1 + rand(0,7) + floor(B/2) + rand(0,B)   (B = bookshelves, capped at 15)
+ *   top    = floor(max(1, xpBase / 3))
+ *   middle = floor(2*xpBase / 3) + 1
+ *   bottom = max(xpBase, 2*B)
+ *
+ * Only the first 15 bookshelves count — more than that has no further
+ * effect, same as in-game. The level is re-rolled every time the table's
+ * seed changes (any inventory click), so a Monte-Carlo trial re-rolls it
+ * fresh each time too, rather than treating it as a single fixed number.
+ */
+export type EnchantingSlot = "top" | "middle" | "bottom";
+export const ENCHANTING_SLOTS: EnchantingSlot[] = ["top", "middle", "bottom"];
+
+function levelFromXpBase(slot: EnchantingSlot, xpBase: number, bookshelves: number): number {
+  switch (slot) {
+    case "top":
+      return Math.floor(Math.max(1, xpBase / 3));
+    case "middle":
+      return Math.floor((2 * xpBase) / 3) + 1;
+    case "bottom":
+      return Math.max(xpBase, 2 * bookshelves);
+  }
+}
+
+/** One random displayed level for `slot` at a given bookshelf count. */
+function rollSlotLevel(slot: EnchantingSlot, bookshelves: number): number {
+  const b = Math.max(0, Math.min(15, bookshelves));
+  const xpBase = 1 + Math.floor(Math.random() * 8) + Math.floor(b / 2) + Math.floor(Math.random() * (b + 1));
+  return levelFromXpBase(slot, xpBase, b);
+}
+
+/**
+ * The full range a slot could ever show at a given bookshelf count —
+ * display-only (e.g. "Bottom slot, level 24-30"), not used by the
+ * simulation itself, which re-rolls a fresh value every trial instead of
+ * assuming the middle or edges of this range.
+ */
+export function slotLevelRange(slot: EnchantingSlot, bookshelves: number): { min: number; max: number } {
+  const b = Math.max(0, Math.min(15, bookshelves));
+  return {
+    min: levelFromXpBase(slot, 1 + Math.floor(b / 2), b),
+    max: levelFromXpBase(slot, 1 + 7 + Math.floor(b / 2) + b, b),
+  };
+}
+
 function minCost(e: Enchantment, level: number): number {
   return e.minCost.base + e.minCost.perLevelAboveFirst * (level - 1);
 }
@@ -108,7 +162,21 @@ export interface TableOddsInput {
   category?: ItemCategory;
   /** Explicit candidate pool override — used for fishing's book slot and book mode, neither restricted by item category. */
   pool?: Enchantment[];
-  displayedLevel: number; // 1-30, what the slot shows in-game
+  /**
+   * Fixed table level (1-30), used as-is every trial. Only fishing's book
+   * roll in treasure.ts uses this path now — it's modeling "a book that
+   * rolled at full power," not a physical table with bookshelves.
+   */
+  displayedLevel?: number;
+  /**
+   * Real-table alternative to `displayedLevel`: pass both `bookshelves`
+   * and `slot` and the displayed level is re-rolled from the real formula
+   * every trial (see the header above), matching what actually happens at
+   * a table with that many shelves. Takes priority over `displayedLevel`
+   * when both are given.
+   */
+  bookshelves?: number;
+  slot?: EnchantingSlot;
   enchantability: number;
   targetEnchantId: string;
   targetLevel: number;
@@ -121,9 +189,14 @@ export interface TableOddsInput {
 export function simulateTableOdds(input: TableOddsInput): number {
   const trials = input.trials ?? 4000;
   const pool = input.pool ?? enchantmentsFor(input.category!);
+  const rollLevel: () => number =
+    input.slot && input.bookshelves !== undefined
+      ? () => rollSlotLevel(input.slot!, input.bookshelves!)
+      : () => input.displayedLevel!;
+
   let hits = 0;
   for (let i = 0; i < trials; i++) {
-    const eCost = computeECost(input.displayedLevel, input.enchantability);
+    const eCost = computeECost(rollLevel(), input.enchantability);
     const rolled = simulateRoll(pool, eCost, input.isBook);
     if (rolled.some((r) => r.id === input.targetEnchantId && r.level >= input.targetLevel)) hits++;
   }
@@ -132,64 +205,80 @@ export function simulateTableOdds(input: TableOddsInput): number {
 
 export interface BestTableCombo {
   material: string;
-  level: number;
+  slot: EnchantingSlot;
   probability: number;
 }
 
 /**
- * Sweeps every material available for the category across levels 1-30 to
- * find the best odds of the target enchant/level. Materials with no
- * variants (e.g. bow) are handled by the caller passing a single entry.
+ * Sweeps every material available for the category across the 3 real
+ * table slots (at the player's own bookshelf count) to find the best odds
+ * of the target enchant/level. Materials with no variants (e.g. bow) are
+ * handled by the caller passing a single entry.
+ *
+ * This used to sweep an abstract "displayed level 1-30" instead of
+ * bookshelves/slot — accurate, but not actionable: a player can't type in
+ * a table level, only choose a bookshelf count and then watch one of 3
+ * slots. Bookshelf-count helper (PROJECT.md roadmap) replaced that sweep
+ * with this one so results map directly onto what's actually clickable.
  */
 export function findBestTableOdds(
   category: ItemCategory,
   targetEnchantId: string,
   targetLevel: number,
   materials: Array<{ id: string; enchantability: number }>,
-  trialsPerPoint = 1500
+  bookshelves: number,
+  trialsPerPoint = 6000
 ): BestTableCombo[] {
   const results: BestTableCombo[] = [];
   for (const material of materials) {
-    for (let level = 1; level <= 30; level++) {
+    for (const slot of ENCHANTING_SLOTS) {
       const probability = simulateTableOdds({
         category,
-        displayedLevel: level,
+        bookshelves,
+        slot,
         enchantability: material.enchantability,
         targetEnchantId,
         targetLevel,
         trials: trialsPerPoint,
       });
-      results.push({ material: material.id, level, probability });
+      results.push({ material: material.id, slot, probability });
     }
   }
   return results.sort((a, b) => b.probability - a.probability);
 }
 
-export interface BestBookLevel {
-  level: number;
+export interface BestBookSlot {
+  slot: EnchantingSlot;
   probability: number;
 }
 
 /**
  * Books have no material/enchantability choice (enchantability is fixed at
  * 1, same as bow/trident/etc.) and aren't restricted to one item category's
- * pool — every non-treasure enchantment is a candidate. So the only thing
- * worth sweeping is the displayed level.
+ * pool — every non-treasure enchantment is a candidate. So (since the
+ * bookshelf-count helper above) the only thing left worth sweeping is
+ * which of the 3 slots to watch.
  */
-export function findBestBookOdds(targetEnchantId: string, targetLevel: number, trialsPerPoint = 3000): BestBookLevel[] {
+export function findBestBookOdds(
+  targetEnchantId: string,
+  targetLevel: number,
+  bookshelves: number,
+  trialsPerPoint = 8000
+): BestBookSlot[] {
   const pool = nonTreasurePool();
-  const results: BestBookLevel[] = [];
-  for (let level = 1; level <= 30; level++) {
+  const results: BestBookSlot[] = [];
+  for (const slot of ENCHANTING_SLOTS) {
     const probability = simulateTableOdds({
       pool,
-      displayedLevel: level,
+      bookshelves,
+      slot,
       enchantability: 1,
       targetEnchantId,
       targetLevel,
       trials: trialsPerPoint,
       isBook: true,
     });
-    results.push({ level, probability });
+    results.push({ slot, probability });
   }
   return results.sort((a, b) => b.probability - a.probability);
 }

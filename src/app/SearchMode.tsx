@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { ENCHANTMENTS, enchantmentById } from "@/lib/enchantments";
 import { materialsFor, enchantability, type Material } from "@/lib/materials";
-import { findBestTableOdds, findBestBookOdds, type BestTableCombo, type BestBookLevel } from "@/lib/tableOdds";
+import { findBestTableOdds, findBestBookOdds, slotLevelRange, type BestTableCombo, type BestBookSlot } from "@/lib/tableOdds";
 import { treasureOdds, treasureSourceNote, isStructureLootOnly, type TreasureOddsResult } from "@/lib/treasure";
 import { rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
 import { enchantmentName, itemName, bareItemName } from "@/lib/i18n";
-import { t } from "@/lib/strings";
+import { t, slotLabel } from "@/lib/strings";
 import { readShareParams, patchShareParams } from "@/lib/shareLink";
 import { useLocale } from "./LocaleContext";
 import type { ItemCategory } from "@/lib/types";
@@ -22,7 +22,7 @@ const SOURCE_ICON: Record<TreasureOddsResult["source"], string> = {
 
 interface Results {
   table: BestTableCombo[] | null;
-  book: BestBookLevel[] | null;
+  book: BestBookSlot[] | null;
   tradeAndFish: TreasureOddsResult[] | null;
 }
 
@@ -39,6 +39,9 @@ export default function SearchMode() {
   const [level, setLevel] = useState(enchant.maxLevel);
   const [category, setCategory] = useState<ItemCategory>(enchant.categories[0]);
   const [luckOfTheSea, setLuckOfTheSea] = useState(0);
+  // 15 is the standard "full room" setup most guides recommend — a
+  // reasonable default for someone who hasn't counted their own yet.
+  const [bookshelves, setBookshelves] = useState(15);
 
   const [results, setResults] = useState<Results | null>(null);
   const [calculating, setCalculating] = useState(false);
@@ -65,14 +68,23 @@ export default function SearchMode() {
     if (s.luckOfTheSea !== undefined && s.luckOfTheSea >= 0 && s.luckOfTheSea <= 3) {
       setLuckOfTheSea(s.luckOfTheSea);
     }
+    if (s.bookshelves !== undefined && s.bookshelves >= 0 && s.bookshelves <= 15) {
+      setBookshelves(s.bookshelves);
+    }
   }, []);
 
   // Keeps the URL's search-mode params in sync with the live selection —
-  // namespaced (e/lv/c/lk) so they coexist with the advisor's own params
+  // namespaced (e/lv/c/lk/bs) so they coexist with the advisor's own params
   // (it/mt/g/h) written by page.tsx without clobbering each other.
   useEffect(() => {
-    patchShareParams({ e: enchantId, lv: String(level), c: category, lk: luckOfTheSea > 0 ? String(luckOfTheSea) : null });
-  }, [enchantId, level, category, luckOfTheSea]);
+    patchShareParams({
+      e: enchantId,
+      lv: String(level),
+      c: category,
+      lk: luckOfTheSea > 0 ? String(luckOfTheSea) : null,
+      bs: bookshelves !== 15 ? String(bookshelves) : null,
+    });
+  }, [enchantId, level, category, luckOfTheSea, bookshelves]);
 
   const structureOnly = isStructureLootOnly(enchantId);
 
@@ -97,8 +109,8 @@ export default function SearchMode() {
           materials.length > 0
             ? materials.map((m) => ({ id: m, enchantability: enchantability(category, m) }))
             : [{ id: "—", enchantability: enchantability(category) }];
-        next.table = findBestTableOdds(category, enchantId, level, materialInputs);
-        next.book = findBestBookOdds(enchantId, level);
+        next.table = findBestTableOdds(category, enchantId, level, materialInputs, bookshelves);
+        next.book = findBestBookOdds(enchantId, level, bookshelves);
       }
 
       if (!structureOnly) {
@@ -173,6 +185,25 @@ export default function SearchMode() {
           </div>
         )}
 
+        {!enchant.treasureOnly && (
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+              {t("searchBookshelvesLabel", locale)}
+            </label>
+            <select
+              value={bookshelves}
+              onChange={(e) => setBookshelves(Number(e.target.value))}
+              className="mt-1.5 block rounded-md border border-[var(--surface-border)] bg-[var(--surface-raised)] px-2 py-1.5 text-sm"
+            >
+              {Array.from({ length: 16 }, (_, i) => i).map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {!structureOnly && (
           <div>
             <label className="text-xs font-semibold uppercase tracking-wide text-muted">
@@ -206,6 +237,7 @@ export default function SearchMode() {
           {enchantmentName(enchantId, locale)} {t("searchTreasureOnlyNote", locale)}
         </p>
       )}
+      {!enchant.treasureOnly && <p className="mt-3 text-xs text-muted">{t("searchBookshelvesNote", locale)}</p>}
 
       {results?.table && (
         <section className="mt-6">
@@ -213,30 +245,35 @@ export default function SearchMode() {
             {t("searchBestCombosPrefix", locale)} {bareItemName(category, locale)}
           </h3>
           <div className="mt-3 space-y-2">
-            {results.table.slice(0, 8).map((r, i) => (
-              <div
-                key={`${r.material}-${r.level}`}
-                className={`panel flex items-center gap-3 p-3 ${i === 0 ? "glint ring-1 ring-[var(--accent-solid)]" : ""}`}
-              >
-                <span className="w-6 shrink-0 text-center text-base">{RANK_MEDAL[i] ?? i + 1}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="truncate text-sm font-medium">
-                      {itemName(category, r.material as Material, locale)} · {t("levelPrefix", locale)} {r.level}
-                    </span>
-                    <span className="font-display shrink-0 text-sm font-bold accent-text">
-                      {(r.probability * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-raised)]">
-                    <div
-                      className="accent-gradient h-full rounded-full"
-                      style={{ width: `${Math.min(100, r.probability * 100)}%` }}
-                    />
+            {results.table.slice(0, 8).map((r, i) => {
+              const range = slotLevelRange(r.slot, bookshelves);
+              return (
+                <div
+                  key={`${r.material}-${r.slot}`}
+                  className={`panel flex items-center gap-3 p-3 ${i === 0 ? "glint ring-1 ring-[var(--accent-solid)]" : ""}`}
+                >
+                  <span className="w-6 shrink-0 text-center text-base">{RANK_MEDAL[i] ?? i + 1}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="truncate text-sm font-medium">
+                        {itemName(category, r.material as Material, locale)} · {slotLabel(r.slot, locale)} (
+                        {t("levelPrefix", locale)} {range.min}
+                        {range.min !== range.max ? `–${range.max}` : ""})
+                      </span>
+                      <span className="font-display shrink-0 text-sm font-bold accent-text">
+                        {(r.probability * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-raised)]">
+                      <div
+                        className="accent-gradient h-full rounded-full"
+                        style={{ width: `${Math.min(100, r.probability * 100)}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <p className="mt-3 text-xs text-muted">{t("searchMonteCarloNoteItem", locale)}</p>
         </section>
@@ -249,30 +286,34 @@ export default function SearchMode() {
           </h3>
           <p className="mt-1 text-xs text-muted">{t("searchBookNote", locale)}</p>
           <div className="mt-3 space-y-2">
-            {results.book.slice(0, 8).map((r, i) => (
-              <div
-                key={r.level}
-                className={`panel flex items-center gap-3 p-3 ${i === 0 ? "glint ring-1 ring-[var(--accent-solid)]" : ""}`}
-              >
-                <span className="w-6 shrink-0 text-center text-base">{RANK_MEDAL[i] ?? i + 1}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="truncate text-sm font-medium">
-                      {t("levelPrefix", locale)} {r.level}
-                    </span>
-                    <span className="font-display shrink-0 text-sm font-bold accent-text">
-                      {(r.probability * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-raised)]">
-                    <div
-                      className="accent-gradient h-full rounded-full"
-                      style={{ width: `${Math.min(100, r.probability * 100)}%` }}
-                    />
+            {results.book.slice(0, 8).map((r, i) => {
+              const range = slotLevelRange(r.slot, bookshelves);
+              return (
+                <div
+                  key={r.slot}
+                  className={`panel flex items-center gap-3 p-3 ${i === 0 ? "glint ring-1 ring-[var(--accent-solid)]" : ""}`}
+                >
+                  <span className="w-6 shrink-0 text-center text-base">{RANK_MEDAL[i] ?? i + 1}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="truncate text-sm font-medium">
+                        {slotLabel(r.slot, locale)} ({t("levelPrefix", locale)} {range.min}
+                        {range.min !== range.max ? `–${range.max}` : ""})
+                      </span>
+                      <span className="font-display shrink-0 text-sm font-bold accent-text">
+                        {(r.probability * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-raised)]">
+                      <div
+                        className="accent-gradient h-full rounded-full"
+                        style={{ width: `${Math.min(100, r.probability * 100)}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <p className="mt-3 text-xs text-muted">{t("searchMonteCarloNoteBook", locale)}</p>
         </section>

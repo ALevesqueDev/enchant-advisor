@@ -22,6 +22,7 @@ export interface SearchShareState {
   level: number;
   category: ItemCategory;
   luckOfTheSea: number;
+  bookshelves: number;
 }
 
 /**
@@ -97,6 +98,7 @@ export function readShareParams(params: URLSearchParams): DecodedShareState {
         level: params.has("lv") ? Number(params.get("lv")) : undefined,
         category: (params.get("c") as ItemCategory) ?? undefined,
         luckOfTheSea: params.has("lk") ? Number(params.get("lk")) : 0,
+        bookshelves: params.has("bs") ? Number(params.get("bs")) : 15,
       }
     : null;
 

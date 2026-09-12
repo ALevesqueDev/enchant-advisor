@@ -1,26 +1,30 @@
-// Treasure-enchantment sourcing — the enchanting table can NEVER offer
-// these, by design, so "what level/material gives the best odds" has no
-// answer for them. What's actually computable: fishing and villager
-// trading odds, verified against real loot-table/trade JSON on 2026-09-11
-// (github.com/misode/mcmeta) — see PROJECT.md.
+// Villager trading and fishing odds.
+//
+// Bug fixed 2026-09-13: this used to only compute these odds for the 4
+// treasure enchantments that are ALSO tradeable (Mending, Frost Walker, the
+// curses) and silently returned nothing for every other enchantment. But
+// the `tradeable`/`on_random_loot` tags cover 40 of our 43 enchantments —
+// almost every non-treasure enchantment (Sharpness, Protection, Efficiency,
+// ...) is ALSO obtainable this way, not just the treasure-flavored ones.
+// Only Soul Speed, Swift Sneak, and Wind Burst are excluded from both tags
+// (structure loot only). See enchantments.ts/PROJECT.md for how
+// `treasureOnly` (which enchantments the TABLE can offer) was derived from
+// the real `non_treasure` tag — that flag is unrelated to this one.
 
 import { ENCHANTMENTS, enchantmentById, nonTreasurePool } from "./enchantments";
 import { simulateTableOdds } from "./tableOdds";
 import type { Locale } from "./i18n";
 
-export const TREASURE_ENCHANT_IDS = ["mending", "frost_walker", "binding_curse", "vanishing_curse", "soul_speed", "swift_sneak", "wind_burst"] as const;
-
 /**
  * Enchantments a villager trade / fishing "random enchanted book" roll can
- * produce: every non-treasure enchantment, PLUS these four specifically
- * (tags/enchantment/tradeable.json and on_random_loot.json — identical
- * membership). Riptide and Channeling look treasure-flavored but are
- * actually members of the `non_treasure` tag themselves — confirmed against
- * the raw tag data by scripts/check-game-version.mjs, which caught this
- * assistant's own earlier mistake (both were originally marked
- * treasureOnly, sourced from a wiki-summary fetch rather than the tag
- * itself). Soul Speed and Swift Sneak are genuinely absent from both tags —
- * structure loot only (and Soul Speed also from bartering with piglins).
+ * produce: every non-treasure enchantment, PLUS these four treasure
+ * enchantments specifically (tags/enchantment/tradeable.json and
+ * on_random_loot.json — identical membership). Riptide and Channeling look
+ * treasure-flavored but are actually members of the `non_treasure` tag
+ * itself — confirmed against the raw tag data by
+ * scripts/check-game-version.mjs, which caught this assistant's own
+ * earlier mistake (both were originally marked treasureOnly, sourced from
+ * a wiki-summary fetch rather than the tag itself).
  */
 const TRADEABLE_TREASURE_ADDITIONS = ["mending", "frost_walker", "binding_curse", "vanishing_curse"];
 
@@ -43,9 +47,8 @@ const LUCK_OF_THE_SEA_TREASURE_BONUS_PER_LEVEL = 0.021; // community-measured, n
 const BASE_TREASURE_CATCH_CHANCE = 0.05;
 
 /**
- * Structure-loot-only treasure enchants: no fishing/trading route, so we
- * don't fabricate a percentage — these come only from specific loot chests
- * (and Soul Speed also from piglin bartering).
+ * Genuinely absent from both tags — no fishing/trading route at all
+ * (Soul Speed is also obtainable by bartering with a piglin).
  */
 const STRUCTURE_ONLY_SOURCES: Record<string, Record<Locale, string>> = {
   soul_speed: {
@@ -62,6 +65,10 @@ const STRUCTURE_ONLY_SOURCES: Record<string, Record<Locale, string>> = {
   },
 };
 
+export function isStructureLootOnly(enchantId: string): boolean {
+  return Boolean(STRUCTURE_ONLY_SOURCES[enchantId]);
+}
+
 function tradingNote(poolSize: number, locale: Locale): string {
   return locale === "en"
     ? `Uniform draw (not weighted by rarity) among ${poolSize} possible enchantments from a librarian (novice-to-expert tiers). The level you get is also random — you can't aim directly for the max level. Rerolling just costs a lectern (break/replace it to reroll the villager's job).`
@@ -74,6 +81,13 @@ function fishingNote(treasureCatchChancePercent: string, luckOfTheSeaLevel: numb
     : `≈${treasureCatchChancePercent}% de prise "trésor" par lancer (Luck of the Sea ${luckOfTheSeaLevel}) × 1/6 pour que ce soit le livre × chance que le livre porte cet enchantement au niveau visé. Approximatif : le bonus de Luck of the Sea est une valeur mesurée par la communauté, pas extraite des données brutes du jeu.`;
 }
 
+/**
+ * Trading + fishing odds for ANY enchantment that's in the tradeable/loot
+ * pool (40 of our 43 — everything except the three structure-only ones).
+ * Works the same whether the enchantment is treasure-only or not; the
+ * caller decides what else to show alongside this (table/book odds only
+ * make sense for non-treasure enchantments).
+ */
 export function treasureOdds(
   enchantId: string,
   targetLevel: number,
@@ -85,11 +99,6 @@ export function treasureOdds(
 
   if (STRUCTURE_ONLY_SOURCES[enchantId]) {
     results.push({ source: "structure_loot_only", note: STRUCTURE_ONLY_SOURCES[enchantId][locale] });
-    return results;
-  }
-
-  if (!TRADEABLE_TREASURE_ADDITIONS.includes(enchantId)) {
-    // Not actually treasure-only, or not in the known tradeable/loot set — caller error guard.
     return results;
   }
 

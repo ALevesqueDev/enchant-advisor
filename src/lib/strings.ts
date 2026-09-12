@@ -49,9 +49,6 @@ const UI = {
   searchEnchantmentLabel: { en: "Enchantment to search for", fr: "Enchantement recherché" },
   searchLevelLabel: { en: "Target level", fr: "Niveau visé" },
   searchItemLabel: { en: "Item", fr: "Objet" },
-  searchTargetLabel: { en: "Enchant", fr: "Enchanter" },
-  searchTargetItem: { en: "The item directly", fr: "L'objet directement" },
-  searchTargetBook: { en: "A book", fr: "Un livre" },
   searchBookNote: {
     en: "A book gets the same roll as an item, but if more than one enchantment comes up, one is discarded at random — books have lower odds of stacking extras than the item they'll end up transferred onto.",
     fr: "Un livre suit le même tirage qu'un objet, mais si plusieurs enchantements sortent, l'un d'eux est retiré au hasard — un livre a moins de chances de cumuler des extras que l'objet sur lequel il sera transféré.",

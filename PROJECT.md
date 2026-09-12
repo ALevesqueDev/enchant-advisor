@@ -230,8 +230,19 @@ on which of these you actually want first.
 9. **Mobile QA pass** — one real click-blocking bug already surfaced
    (`.glint::after` missing `pointer-events: none`) from the visual
    redesign; worth a dedicated pass across both modes on a real phone.
-10. **PWA support** — add a manifest + service worker so it can be
-    "installed" to a phone home screen. Purely cosmetic (it's still a web
-    app under the hood) but closes the "is this an app?" question for good.
+10. ~~PWA support~~ — done: `src/app/manifest.ts` (Next's file convention,
+    auto-served at `/manifest.webmanifest` and auto-linked, no manual
+    `<link>` needed) plus `public/sw.js`, a stale-while-revalidate service
+    worker registered client-side by `ServiceWorkerRegister.tsx`. Since the
+    whole app is static with no backend (see "Not yet decided" above),
+    caching everything means genuine offline use after the first visit,
+    not just satisfying the install checkbox. `layout.tsx` adds the
+    `appleWebApp`/`viewport.themeColor` metadata iOS needs for a proper
+    standalone "Add to Home Screen" (iOS ignores the web manifest
+    entirely). App icons (`icon.png`, `apple-icon.png`, and the
+    manifest's `icon-192`/`icon-512` in `public/`) are a small sparkle
+    glyph in the app's own accent gradient, generated as raw PNGs by a
+    scratch Node script (no image-editing tool was available in this
+    environment) rather than left as Next's default logo.
 11. ~~Public repo + license~~ — done: the repo is public, all rights
     reserved (see LICENSE), and the footer's GitHub Issues link works.

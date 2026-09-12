@@ -49,9 +49,15 @@ export interface Enchantment {
 /** What the player already has on the item: enchantment id -> current level. */
 export type EnchantSet = Record<string, number>;
 
+/** UI copy in both supported languages — not a translation key, the actual strings. */
+export interface LocalizedText {
+  en: string;
+  fr: string;
+}
+
 export interface Goal {
   id: string;
-  label: string;
+  label: LocalizedText;
   /** Enchantment id -> the level worth aiming for under this goal. */
   targets: Record<string, number>;
 }

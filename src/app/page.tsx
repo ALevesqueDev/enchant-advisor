@@ -5,28 +5,15 @@ import { ITEM_CATEGORY_LABELS, enchantmentById, enchantmentsFor } from "@/lib/en
 import { GOALS } from "@/lib/goals";
 import { recommend, untouchedCurrentEnchants } from "@/lib/recommend";
 import { planAnvilCombines } from "@/lib/anvil";
-import { CATEGORY_ICON, RARITY_LABELS, RARITY_VAR, rarityFromWeight } from "@/lib/presentation";
+import { CATEGORY_ICON, rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
 import { enchantmentName, representativeItemName, LOCALE_LABELS, type Locale } from "@/lib/i18n";
+import { t, blockedByNote, levelTargetNote } from "@/lib/strings";
 import { useLocale } from "./LocaleContext";
 import type { EnchantSet, ItemCategory } from "@/lib/types";
 import SearchMode from "./SearchMode";
 import Footer from "./Footer";
 
 const CATEGORIES = Object.keys(ITEM_CATEGORY_LABELS) as ItemCategory[];
-
-const STATUS_LABEL: Record<string, string> = {
-  add: "À ajouter",
-  upgrade: "À améliorer",
-  "already-optimal": "Déjà optimal",
-  conflict: "Conflit",
-};
-
-const STATUS_STYLE: Record<string, string> = {
-  add: "bg-[var(--status-add-bg)] text-[var(--status-add-fg)]",
-  upgrade: "bg-[var(--status-upgrade-bg)] text-[var(--status-upgrade-fg)]",
-  "already-optimal": "bg-[var(--status-neutral-bg)] text-[var(--status-neutral-fg)]",
-  conflict: "bg-[var(--status-conflict-bg)] text-[var(--status-conflict-fg)]",
-};
 
 function SectionLabel({ index, children }: { index: string; children: React.ReactNode }) {
   return (
@@ -57,11 +44,11 @@ function LocaleToggle({ locale, setLocale }: { locale: Locale; setLocale: (l: Lo
   );
 }
 
-function RarityDot({ weight }: { weight: number }) {
+function RarityDot({ weight, locale }: { weight: number; locale: Locale }) {
   const rarity = rarityFromWeight(weight);
   return (
     <span
-      title={RARITY_LABELS[rarity]}
+      title={rarityLabel(rarity, locale)}
       className="inline-block h-2 w-2 shrink-0 rounded-full"
       style={{ background: `var(${RARITY_VAR[rarity]})`, boxShadow: `0 0 6px var(${RARITY_VAR[rarity]})` }}
     />
@@ -78,6 +65,19 @@ export default function Home() {
   const applicable = useMemo(() => enchantmentsFor(category), [category]);
   const goals = GOALS[category];
   const goal = goals.find((g) => g.id === goalId) ?? goals[0];
+
+  const STATUS_LABEL: Record<string, string> = {
+    add: t("statusAdd", locale),
+    upgrade: t("statusUpgrade", locale),
+    "already-optimal": t("statusOptimal", locale),
+    conflict: t("statusConflict", locale),
+  };
+  const STATUS_STYLE: Record<string, string> = {
+    add: "bg-[var(--status-add-bg)] text-[var(--status-add-fg)]",
+    upgrade: "bg-[var(--status-upgrade-bg)] text-[var(--status-upgrade-fg)]",
+    "already-optimal": "bg-[var(--status-neutral-bg)] text-[var(--status-neutral-fg)]",
+    conflict: "bg-[var(--status-conflict-bg)] text-[var(--status-conflict-fg)]",
+  };
 
   function changeCategory(next: ItemCategory) {
     setCategory(next);
@@ -111,10 +111,7 @@ export default function Home() {
             ✦ Minecraft Java Edition
           </span>
           <h1 className="font-display accent-text mt-4 text-4xl font-bold sm:text-5xl">Enchant Advisor</h1>
-          <p className="mt-2 max-w-xl text-sm text-muted sm:text-base">
-            Ton objet, ce qui est déjà enchanté dessus, et ton objectif — on te dit quoi ajouter, et ce que ça va
-            coûter à l&apos;enclume.
-          </p>
+          <p className="mt-2 max-w-xl text-sm text-muted sm:text-base">{t("heroTagline", locale)}</p>
         </div>
         <div className="flex justify-center sm:justify-end">
           <LocaleToggle locale={locale} setLocale={setLocale} />
@@ -129,7 +126,7 @@ export default function Home() {
             mode === "advisor" ? "accent-gradient text-white shadow-sm" : "text-muted hover:text-foreground"
           }`}
         >
-          Conseiller
+          {t("modeAdvisor", locale)}
         </button>
         <button
           onClick={() => setMode("search")}
@@ -137,7 +134,7 @@ export default function Home() {
             mode === "search" ? "accent-gradient text-white shadow-sm" : "text-muted hover:text-foreground"
           }`}
         >
-          Recherche d&apos;enchantement
+          {t("modeSearch", locale)}
         </button>
       </div>
 
@@ -147,7 +144,7 @@ export default function Home() {
         <>
           {/* Step 1: item */}
           <section className="mt-10">
-            <SectionLabel index="1">Objet</SectionLabel>
+            <SectionLabel index="1">{t("step1Item", locale)}</SectionLabel>
             <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
               {CATEGORIES.map((c) => (
                 <button
@@ -166,24 +163,24 @@ export default function Home() {
 
           {/* Step 2: current enchants */}
           <section className="mt-10">
-            <SectionLabel index="2">Enchantements déjà sur l&apos;objet</SectionLabel>
+            <SectionLabel index="2">{t("step2CurrentEnchants", locale)}</SectionLabel>
             <div className="panel mt-3 divide-y divide-[var(--surface-border)]">
               {applicable.map((e) => (
                 <div key={e.id} className="flex items-center justify-between gap-4 px-4 py-2.5">
                   <span className="flex items-center gap-2 text-sm">
-                    <RarityDot weight={e.weight} />
+                    <RarityDot weight={e.weight} locale={locale} />
                     {enchantmentName(e.id, locale)}
-                    {e.treasureOnly && <span className="text-xs text-muted">(trésor)</span>}
+                    {e.treasureOnly && <span className="text-xs text-muted">{t("treasureTag", locale)}</span>}
                   </span>
                   <select
                     value={current[e.id] ?? 0}
                     onChange={(ev) => setLevel(e.id, Number(ev.target.value))}
                     className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-raised)] px-2 py-1 text-sm"
                   >
-                    <option value={0}>—</option>
+                    <option value={0}>{t("noneOption", locale)}</option>
                     {Array.from({ length: e.maxLevel }, (_, i) => i + 1).map((lvl) => (
                       <option key={lvl} value={lvl}>
-                        Niveau {lvl}
+                        {t("levelPrefix", locale)} {lvl}
                       </option>
                     ))}
                   </select>
@@ -194,7 +191,7 @@ export default function Home() {
 
           {/* Step 3: goal */}
           <section className="mt-10">
-            <SectionLabel index="3">Objectif</SectionLabel>
+            <SectionLabel index="3">{t("step3Goal", locale)}</SectionLabel>
             <div className="mt-3 flex flex-wrap gap-2">
               {goals.map((g) => (
                 <button
@@ -206,7 +203,7 @@ export default function Home() {
                       : "panel text-muted hover:text-foreground"
                   }`}
                 >
-                  {g.label}
+                  {g.label[locale]}
                 </button>
               ))}
             </div>
@@ -214,20 +211,20 @@ export default function Home() {
 
           {/* Recommendations */}
           <section className="mt-10">
-            <SectionLabel index="4">Recommandation</SectionLabel>
+            <SectionLabel index="4">{t("step4Recommendation", locale)}</SectionLabel>
             <div className="panel mt-3 divide-y divide-[var(--surface-border)]">
               {recommendations.map((r) => {
                 const e = enchantmentById(r.enchantId);
                 return (
                   <div key={r.enchantId} className="flex items-center justify-between gap-4 px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <RarityDot weight={e.weight} />
+                      <RarityDot weight={e.weight} locale={locale} />
                       <div>
                         <div className="text-sm font-medium">{enchantmentName(e.id, locale)}</div>
                         <div className="text-xs text-muted">
                           {r.status === "conflict"
-                            ? `Bloqué par ${enchantmentName(r.conflictsWith!, locale)} déjà sur l'objet`
-                            : `${r.currentLevel > 0 ? `Niveau ${r.currentLevel} → ` : ""}Niveau ${r.targetLevel} visé`}
+                            ? blockedByNote(enchantmentName(r.conflictsWith!, locale), locale)
+                            : levelTargetNote(r.currentLevel, r.targetLevel, locale)}
                         </div>
                       </div>
                     </div>
@@ -240,7 +237,7 @@ export default function Home() {
             </div>
             {untouched.length > 0 && (
               <p className="mt-2 text-xs text-muted">
-                Conservés sans impact sur cet objectif : {untouched.map((id) => enchantmentName(id, locale)).join(", ")}.
+                {t("keptNoImpact", locale)} {untouched.map((id) => enchantmentName(id, locale)).join(", ")}.
               </p>
             )}
           </section>
@@ -248,21 +245,18 @@ export default function Home() {
           {/* Anvil plan */}
           {anvilPlan.steps.length > 0 && (
             <section className="mt-10">
-              <SectionLabel index="5">Coût d&apos;enclume</SectionLabel>
-              <p className="mt-2 text-xs text-muted">
-                En supposant chaque enchantement appliqué via un livre neuf, séparément. Le total ne dépend pas de
-                l&apos;ordre — seul le nombre d&apos;opérations précédentes sur l&apos;objet compte pour la pénalité.
-              </p>
+              <SectionLabel index="5">{t("step5AnvilCost", locale)}</SectionLabel>
+              <p className="mt-2 text-xs text-muted">{t("anvilAssumption", locale)}</p>
 
               <div className="panel mt-3 overflow-x-auto">
                 <table className="w-full min-w-[420px] text-sm">
                   <thead className="text-left text-xs uppercase tracking-wide text-muted">
                     <tr className="border-b border-[var(--surface-border)]">
-                      <th className="px-4 py-2.5 font-medium">Étape</th>
-                      <th className="px-4 py-2.5 font-medium">Enchantement</th>
-                      <th className="px-4 py-2.5 font-medium text-right">Pénalité</th>
-                      <th className="px-4 py-2.5 font-medium text-right">Coût</th>
-                      <th className="px-4 py-2.5 font-medium text-right">Total</th>
+                      <th className="px-4 py-2.5 font-medium">{t("anvilStep", locale)}</th>
+                      <th className="px-4 py-2.5 font-medium">{t("anvilEnchantment", locale)}</th>
+                      <th className="px-4 py-2.5 font-medium text-right">{t("anvilPenalty", locale)}</th>
+                      <th className="px-4 py-2.5 font-medium text-right">{t("anvilCost", locale)}</th>
+                      <th className="px-4 py-2.5 font-medium text-right">{t("anvilTotal", locale)}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--surface-border)]">
@@ -290,16 +284,14 @@ export default function Home() {
                   XP
                 </span>
                 <p className="text-sm">
-                  <strong className="font-display text-base">{anvilPlan.totalCost}</strong> niveaux d&apos;XP au
-                  total.
+                  <strong className="font-display text-base">{anvilPlan.totalCost}</strong>{" "}
+                  {t("anvilXpTotalSuffix", locale)}
                 </p>
               </div>
 
               {anvilPlan.anyTooExpensive && (
                 <p className="mt-2 text-sm" style={{ color: "var(--status-conflict-fg)" }}>
-                  ⚠ Au moins une étape dépasse 39 niveaux — l&apos;enclume refusera l&apos;opération (&quot;Too
-                  Expensive!&quot;) en survie/aventure. Retire un objectif de moindre priorité, ou termine ce combo
-                  en mode créatif.
+                  {t("anvilTooExpensive", locale)}
                 </p>
               )}
             </section>
@@ -307,7 +299,7 @@ export default function Home() {
         </>
       )}
 
-      <Footer />
+      <Footer locale={locale} />
     </div>
   );
 }

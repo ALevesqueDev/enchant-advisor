@@ -2,6 +2,8 @@
 // from enchantments.ts/types.ts since none of this affects game logic.
 
 import type { ItemCategory } from "./types";
+import type { Locale } from "./i18n";
+import { t } from "./strings";
 
 export type Rarity = "common" | "uncommon" | "rare" | "epic";
 
@@ -13,12 +15,16 @@ export function rarityFromWeight(weight: number): Rarity {
   return "epic";
 }
 
-export const RARITY_LABELS: Record<Rarity, string> = {
-  common: "Commun",
-  uncommon: "Peu commun",
-  rare: "Rare",
-  epic: "Épique",
-};
+const RARITY_KEY = {
+  common: "rarityCommon",
+  uncommon: "rarityUncommon",
+  rare: "rarityRare",
+  epic: "rarityEpic",
+} as const;
+
+export function rarityLabel(rarity: Rarity, locale: Locale): string {
+  return t(RARITY_KEY[rarity], locale);
+}
 
 /** CSS variable name (see globals.css) for a rarity's color. */
 export const RARITY_VAR: Record<Rarity, string> = {

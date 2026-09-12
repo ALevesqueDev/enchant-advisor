@@ -27,6 +27,12 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Keep the <html lang> attribute honest for screen readers/browser
+  // translate prompts — the initial SSR value is always "fr" (see above).
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+
   function setLocale(l: Locale) {
     setLocaleState(l);
     try {

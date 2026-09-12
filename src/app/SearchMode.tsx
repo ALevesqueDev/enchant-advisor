@@ -5,8 +5,9 @@ import { ENCHANTMENTS, enchantmentById } from "@/lib/enchantments";
 import { materialsFor, enchantability, type Material } from "@/lib/materials";
 import { findBestTableOdds, type BestTableCombo } from "@/lib/tableOdds";
 import { treasureOdds, type TreasureOddsResult } from "@/lib/treasure";
-import { RARITY_LABELS, RARITY_VAR, rarityFromWeight } from "@/lib/presentation";
+import { rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
 import { enchantmentName, itemName, representativeItemName } from "@/lib/i18n";
+import { t } from "@/lib/strings";
 import { useLocale } from "./LocaleContext";
 import type { ItemCategory } from "@/lib/types";
 
@@ -16,12 +17,6 @@ const SOURCE_ICON: Record<TreasureOddsResult["source"], string> = {
   fishing: "🎣",
   trading: "📚",
   structure_loot_only: "🗝️",
-};
-
-const SOURCE_LABEL: Record<TreasureOddsResult["source"], string> = {
-  fishing: "Pêche",
-  trading: "Commerce (bibliothécaire)",
-  structure_loot_only: "Butin de structure uniquement",
 };
 
 export default function SearchMode() {
@@ -58,7 +53,7 @@ export default function SearchMode() {
     // Let the "calculating" state paint before the synchronous simulation runs.
     setTimeout(() => {
       if (enchant.treasureOnly) {
-        setTreasureResults(treasureOdds(enchantId, level, luckOfTheSea));
+        setTreasureResults(treasureOdds(enchantId, level, locale, luckOfTheSea));
       } else {
         const materials = materialsFor(category);
         const materialInputs =
@@ -74,7 +69,9 @@ export default function SearchMode() {
   return (
     <div className="mt-8">
       <section className="panel p-4">
-        <label className="text-xs font-semibold uppercase tracking-wide text-muted">Enchantement recherché</label>
+        <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+          {t("searchEnchantmentLabel", locale)}
+        </label>
         <div className="mt-2 flex items-center gap-2">
           <span
             className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -87,17 +84,19 @@ export default function SearchMode() {
           >
             {sortedEnchantments.map((e) => (
               <option key={e.id} value={e.id}>
-                {enchantmentName(e.id, locale)} {e.treasureOnly ? "(trésor)" : ""}
+                {enchantmentName(e.id, locale)} {e.treasureOnly ? t("treasureTag", locale) : ""}
               </option>
             ))}
           </select>
         </div>
-        <p className="mt-1.5 text-xs text-muted">{RARITY_LABELS[rarity]}</p>
+        <p className="mt-1.5 text-xs text-muted">{rarityLabel(rarity, locale)}</p>
       </section>
 
       <section className="panel mt-4 flex flex-wrap items-end gap-4 p-4">
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wide text-muted">Niveau visé</label>
+          <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+            {t("searchLevelLabel", locale)}
+          </label>
           <select
             value={level}
             onChange={(e) => setLevel(Number(e.target.value))}
@@ -105,7 +104,7 @@ export default function SearchMode() {
           >
             {Array.from({ length: enchant.maxLevel }, (_, i) => i + 1).map((lvl) => (
               <option key={lvl} value={lvl}>
-                Niveau {lvl}
+                {t("levelPrefix", locale)} {lvl}
               </option>
             ))}
           </select>
@@ -113,7 +112,9 @@ export default function SearchMode() {
 
         {!enchant.treasureOnly && (
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wide text-muted">Objet</label>
+            <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+              {t("searchItemLabel", locale)}
+            </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as ItemCategory)}
@@ -131,7 +132,7 @@ export default function SearchMode() {
         {enchant.treasureOnly && (
           <div>
             <label className="text-xs font-semibold uppercase tracking-wide text-muted">
-              Luck of the Sea (pêche)
+              {t("searchLuckOfSeaLabel", locale)}
             </label>
             <select
               value={luckOfTheSea}
@@ -140,7 +141,7 @@ export default function SearchMode() {
             >
               {[0, 1, 2, 3].map((lvl) => (
                 <option key={lvl} value={lvl}>
-                  Niveau {lvl}
+                  {t("levelPrefix", locale)} {lvl}
                 </option>
               ))}
             </select>
@@ -152,21 +153,20 @@ export default function SearchMode() {
           disabled={calculating}
           className="glint accent-gradient rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
         >
-          {calculating ? "Calcul en cours…" : "✦ Calculer"}
+          {calculating ? t("searchCalculating", locale) : t("searchCalculate", locale)}
         </button>
       </section>
 
       {enchant.treasureOnly && (
         <p className="mt-3 text-xs text-muted">
-          {enchantmentName(enchantId, locale)} ne peut jamais sortir de la table d&apos;enchantement — c&apos;est un
-          enchantement trésor. Aucun objet, matériau ou niveau n&apos;y change quoi que ce soit.
+          {enchantmentName(enchantId, locale)} {t("searchTreasureOnlyNote", locale)}
         </p>
       )}
 
       {tableResults && (
         <section className="mt-6">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Meilleures combinaisons — {representativeItemName(category, locale)}
+            {t("searchBestCombosPrefix", locale)} {representativeItemName(category, locale)}
           </h3>
           <div className="mt-3 space-y-2">
             {tableResults.slice(0, 8).map((r, i) => (
@@ -178,7 +178,7 @@ export default function SearchMode() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="truncate text-sm font-medium">
-                      {itemName(category, r.material as Material, locale)} · Niveau {r.level}
+                      {itemName(category, r.material as Material, locale)} · {t("levelPrefix", locale)} {r.level}
                     </span>
                     <span className="font-display shrink-0 text-sm font-bold accent-text">
                       {(r.probability * 100).toFixed(1)}%
@@ -194,23 +194,24 @@ export default function SearchMode() {
               </div>
             ))}
           </div>
-          <p className="mt-3 text-xs text-muted">
-            Simulation Monte-Carlo de l&apos;algorithme réel du jeu (pas une formule fermée) — voir
-            src/lib/tableOdds.ts. Ces probabilités concernent l&apos;objet enchanté directement, pas un livre.
-          </p>
+          <p className="mt-3 text-xs text-muted">{t("searchMonteCarloNote", locale)}</p>
         </section>
       )}
 
       {treasureResults && (
         <section className="mt-6">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Sources et probabilités</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+            {t("searchSourcesHeader", locale)}
+          </h3>
           <div className="mt-3 space-y-2">
             {treasureResults.map((r) => (
               <div key={r.source} className="panel p-4">
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex items-center gap-2 text-sm font-medium">
                     <span className="text-base">{SOURCE_ICON[r.source]}</span>
-                    {SOURCE_LABEL[r.source]}
+                    {r.source === "fishing" && t("sourceFishing", locale)}
+                    {r.source === "trading" && t("sourceTrading", locale)}
+                    {r.source === "structure_loot_only" && t("sourceStructureOnly", locale)}
                   </span>
                   {r.probability !== undefined && (
                     <span className="font-display text-sm font-bold accent-text">

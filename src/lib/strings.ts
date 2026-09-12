@@ -49,6 +49,14 @@ const UI = {
   searchEnchantmentLabel: { en: "Enchantment to search for", fr: "Enchantement recherché" },
   searchLevelLabel: { en: "Target level", fr: "Niveau visé" },
   searchItemLabel: { en: "Item", fr: "Objet" },
+  searchTargetLabel: { en: "Enchant", fr: "Enchanter" },
+  searchTargetItem: { en: "The item directly", fr: "L'objet directement" },
+  searchTargetBook: { en: "A book", fr: "Un livre" },
+  searchBookNote: {
+    en: "A book gets the same roll as an item, but if more than one enchantment comes up, one is discarded at random — books have lower odds of stacking extras than the item they'll end up transferred onto.",
+    fr: "Un livre suit le même tirage qu'un objet, mais si plusieurs enchantements sortent, l'un d'eux est retiré au hasard — un livre a moins de chances de cumuler des extras que l'objet sur lequel il sera transféré.",
+  },
+  enchantedBook: { en: "Enchanted Book", fr: "Livre enchanté" },
   searchLuckOfSeaLabel: { en: "Luck of the Sea (fishing)", fr: "Luck of the Sea (pêche)" },
   searchCalculating: { en: "Calculating…", fr: "Calcul en cours…" },
   searchCalculate: { en: "✦ Calculate", fr: "✦ Calculer" },
@@ -57,9 +65,13 @@ const UI = {
     fr: "ne peut jamais sortir de la table d'enchantement — c'est un enchantement trésor. Aucun objet, matériau ou niveau n'y change quoi que ce soit.",
   },
   searchBestCombosPrefix: { en: "Best combinations —", fr: "Meilleures combinaisons —" },
-  searchMonteCarloNote: {
+  searchMonteCarloNoteItem: {
     en: "Monte-Carlo simulation of the game's real algorithm (not a closed-form formula) — see src/lib/tableOdds.ts. These odds are for enchanting the item directly, not a book.",
     fr: "Simulation Monte-Carlo de l'algorithme réel du jeu (pas une formule fermée) — voir src/lib/tableOdds.ts. Ces probabilités concernent l'objet enchanté directement, pas un livre.",
+  },
+  searchMonteCarloNoteBook: {
+    en: "Monte-Carlo simulation of the game's real algorithm, including the book-specific rule that drops one enchantment if more than one comes up — see src/lib/tableOdds.ts.",
+    fr: "Simulation Monte-Carlo de l'algorithme réel du jeu, incluant la règle propre aux livres qui retire un enchantement si plusieurs sortent — voir src/lib/tableOdds.ts.",
   },
   searchSourcesHeader: { en: "Sources and odds", fr: "Sources et probabilités" },
 

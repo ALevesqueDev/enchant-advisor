@@ -166,11 +166,17 @@ on which of these you actually want first.
 3. ~~Full UI localization~~ — done, see Localization above (`src/lib/strings.ts`).
 4. ~~Advisor material/tier selector~~ — done: step 1 now has an explicit
    material picker instead of silently assuming Diamond.
-5. **Book-enchanting mode** — both the anvil calculator and the table-odds
-   simulator currently model enchanting the item directly. Enchanting a
-   book first (then anvil-transferring it) is a very common real strategy
-   and has slightly different rules (the "-1 enchantment" quirk for books —
-   see `tableOdds.ts`).
+5. ~~Book-enchanting mode~~ — done: search mode has an "item vs book"
+   toggle. A book uses the full non-treasure pool (not category-restricted,
+   see `nonTreasurePool()`), fixed enchantability 1, and the "-1
+   enchantment if more than one comes up" rule (`isBook` in
+   `tableOdds.ts::simulateRoll`) — confirmed against multiple independent
+   sources, not just the original wiki fetch, given this session's earlier
+   wiki-fabrication incident. Fishing's book-slot roll in `treasure.ts` was
+   missing this same rule before it was added here — fixed alongside it.
+   The anvil calculator didn't need changes: it already assumed "each
+   enchantment arrives via a fresh book," which is the book's own eventual
+   fate regardless of how it got that enchantment.
 6. **Full anvil optimizer** — model pre-combining two low-level books into
    a higher-level one before it ever touches the final item, which is where
    combine *order* actually starts to affect total cost (today's calculator

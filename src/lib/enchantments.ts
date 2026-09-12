@@ -148,6 +148,17 @@ export function enchantmentsFor(category: ItemCategory): Enchantment[] {
   return ENCHANTMENTS.filter((e) => e.categories.includes(category));
 }
 
+/**
+ * Every enchantment the table can ever offer, regardless of item — used for
+ * a book (not restricted to one category's pool) and for fishing's book
+ * slot in treasure.ts. Treasure enchantments are never table-offerable, by
+ * definition (see the `treasureOnly` field's derivation from the real
+ * `non_treasure` tag in enchantment-data.json).
+ */
+export function nonTreasurePool(): Enchantment[] {
+  return ENCHANTMENTS.filter((e) => !e.treasureOnly);
+}
+
 export const ITEM_CATEGORY_LABELS: Record<ItemCategory, string> = {
   pickaxe: "Pioche",
   shovel: "Pelle",

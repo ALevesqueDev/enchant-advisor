@@ -4,7 +4,7 @@
 // trading odds, verified against real loot-table/trade JSON on 2026-09-11
 // (github.com/misode/mcmeta) — see PROJECT.md.
 
-import { ENCHANTMENTS, enchantmentById } from "./enchantments";
+import { ENCHANTMENTS, enchantmentById, nonTreasurePool } from "./enchantments";
 import { simulateTableOdds } from "./tableOdds";
 import type { Locale } from "./i18n";
 
@@ -26,7 +26,8 @@ const TRADEABLE_TREASURE_ADDITIONS = ["mending", "frost_walker", "binding_curse"
 
 /** The actual `tradeable` / `on_random_loot` tag membership: every non-treasure enchantment plus the four additions above. */
 function tradeableAndLootPool() {
-  return ENCHANTMENTS.filter((e) => !e.treasureOnly || TRADEABLE_TREASURE_ADDITIONS.includes(e.id));
+  const additions = ENCHANTMENTS.filter((e) => TRADEABLE_TREASURE_ADDITIONS.includes(e.id));
+  return [...nonTreasurePool(), ...additions];
 }
 
 export type TreasureSource = "fishing" | "trading" | "structure_loot_only";
@@ -114,6 +115,7 @@ export function treasureOdds(
     targetEnchantId: enchantId,
     targetLevel,
     trials: 6000,
+    isBook: true, // it's a literal enchanted book, same "-1 enchant" quirk as book mode
   });
   results.push({
     source: "fishing",

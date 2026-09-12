@@ -18,10 +18,14 @@
 //   probability (eCost+1)/50 after halving eCost (floor) — stop otherwise
 //   or when the pool is empty.
 //
-// Scope: models enchanting the ITEM directly (not a book) — see
-// PROJECT.md for the book-specific "-1 enchant" rule this doesn't cover yet.
+// Books follow the same roll, then one extra rule (confirmed against
+// multiple independent sources, not just one wiki fetch, given this
+// session's earlier wiki-fabrication incident — see PROJECT.md): if the
+// roll produced more than one enchantment, one is discarded at random.
+// Books also aren't restricted to an item category's candidate pool — see
+// nonTreasurePool() in enchantments.ts and findBestBookOdds() below.
 
-import { enchantmentsFor } from "./enchantments";
+import { enchantmentsFor, nonTreasurePool } from "./enchantments";
 import type { Enchantment, ItemCategory } from "./types";
 
 function minCost(e: Enchantment, level: number): number {
@@ -50,7 +54,7 @@ interface RolledEnchant {
 }
 
 /** One simulated table roll against a fixed candidate pool. */
-function simulateRoll(pool: Enchantment[], startingECost: number): RolledEnchant[] {
+function simulateRoll(pool: Enchantment[], startingECost: number, isBook = false): RolledEnchant[] {
   let remaining = pool;
   let eCost = startingECost;
   const picked: RolledEnchant[] = [];
@@ -92,19 +96,25 @@ function simulateRoll(pool: Enchantment[], startingECost: number): RolledEnchant
     eCost = Math.floor(eCost / 2);
   }
 
+  if (isBook && picked.length > 1) {
+    picked.splice(Math.floor(Math.random() * picked.length), 1);
+  }
+
   return picked;
 }
 
 export interface TableOddsInput {
   /** Item category to restrict the candidate pool to (via enchantmentsFor). Ignored if `pool` is given. */
   category?: ItemCategory;
-  /** Explicit candidate pool override — used for fishing's book slot, which isn't restricted by item category. */
+  /** Explicit candidate pool override — used for fishing's book slot and book mode, neither restricted by item category. */
   pool?: Enchantment[];
   displayedLevel: number; // 1-30, what the slot shows in-game
   enchantability: number;
   targetEnchantId: string;
   targetLevel: number;
   trials?: number;
+  /** Applies the book-specific "-1 enchantment if more than one" rule. */
+  isBook?: boolean;
 }
 
 /** Probability (0-1) that a single table roll offers targetEnchantId at >= targetLevel. */
@@ -114,7 +124,7 @@ export function simulateTableOdds(input: TableOddsInput): number {
   let hits = 0;
   for (let i = 0; i < trials; i++) {
     const eCost = computeECost(input.displayedLevel, input.enchantability);
-    const rolled = simulateRoll(pool, eCost);
+    const rolled = simulateRoll(pool, eCost, input.isBook);
     if (rolled.some((r) => r.id === input.targetEnchantId && r.level >= input.targetLevel)) hits++;
   }
   return hits / trials;
@@ -151,6 +161,35 @@ export function findBestTableOdds(
       });
       results.push({ material: material.id, level, probability });
     }
+  }
+  return results.sort((a, b) => b.probability - a.probability);
+}
+
+export interface BestBookLevel {
+  level: number;
+  probability: number;
+}
+
+/**
+ * Books have no material/enchantability choice (enchantability is fixed at
+ * 1, same as bow/trident/etc.) and aren't restricted to one item category's
+ * pool — every non-treasure enchantment is a candidate. So the only thing
+ * worth sweeping is the displayed level.
+ */
+export function findBestBookOdds(targetEnchantId: string, targetLevel: number, trialsPerPoint = 3000): BestBookLevel[] {
+  const pool = nonTreasurePool();
+  const results: BestBookLevel[] = [];
+  for (let level = 1; level <= 30; level++) {
+    const probability = simulateTableOdds({
+      pool,
+      displayedLevel: level,
+      enchantability: 1,
+      targetEnchantId,
+      targetLevel,
+      trials: trialsPerPoint,
+      isBook: true,
+    });
+    results.push({ level, probability });
   }
   return results.sort((a, b) => b.probability - a.probability);
 }

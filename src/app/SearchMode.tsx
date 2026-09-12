@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ENCHANTMENTS, enchantmentById } from "@/lib/enchantments";
 import { materialsFor, enchantability, type Material } from "@/lib/materials";
-import { findBestTableOdds, type BestTableCombo } from "@/lib/tableOdds";
+import { findBestTableOdds, findBestBookOdds, type BestTableCombo, type BestBookLevel } from "@/lib/tableOdds";
 import { treasureOdds, type TreasureOddsResult } from "@/lib/treasure";
 import { rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
 import { enchantmentName, itemName, representativeItemName } from "@/lib/i18n";
@@ -19,6 +19,8 @@ const SOURCE_ICON: Record<TreasureOddsResult["source"], string> = {
   structure_loot_only: "🗝️",
 };
 
+type EnchantTarget = "item" | "book";
+
 export default function SearchMode() {
   const { locale } = useLocale();
   const sortedEnchantments = useMemo(
@@ -31,9 +33,11 @@ export default function SearchMode() {
   const rarity = rarityFromWeight(enchant.weight);
   const [level, setLevel] = useState(enchant.maxLevel);
   const [category, setCategory] = useState<ItemCategory>(enchant.categories[0]);
+  const [target, setTarget] = useState<EnchantTarget>("item");
   const [luckOfTheSea, setLuckOfTheSea] = useState(0);
 
   const [tableResults, setTableResults] = useState<BestTableCombo[] | null>(null);
+  const [bookResults, setBookResults] = useState<BestBookLevel[] | null>(null);
   const [treasureResults, setTreasureResults] = useState<TreasureOddsResult[] | null>(null);
   const [calculating, setCalculating] = useState(false);
 
@@ -42,18 +46,23 @@ export default function SearchMode() {
     setEnchantId(id);
     setLevel(e.maxLevel);
     setCategory(e.categories[0]);
+    setTarget("item");
     setTableResults(null);
+    setBookResults(null);
     setTreasureResults(null);
   }
 
   function calculate() {
     setCalculating(true);
     setTableResults(null);
+    setBookResults(null);
     setTreasureResults(null);
     // Let the "calculating" state paint before the synchronous simulation runs.
     setTimeout(() => {
       if (enchant.treasureOnly) {
         setTreasureResults(treasureOdds(enchantId, level, locale, luckOfTheSea));
+      } else if (target === "book") {
+        setBookResults(findBestBookOdds(enchantId, level));
       } else {
         const materials = materialsFor(category);
         const materialInputs =
@@ -92,6 +101,28 @@ export default function SearchMode() {
         <p className="mt-1.5 text-xs text-muted">{rarityLabel(rarity, locale)}</p>
       </section>
 
+      {!enchant.treasureOnly && (
+        <section className="panel mt-4 p-4">
+          <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+            {t("searchTargetLabel", locale)}
+          </label>
+          <div className="mt-2 inline-flex gap-1 rounded-lg bg-[var(--surface-raised)] p-1">
+            {(["item", "book"] as EnchantTarget[]).map((opt) => (
+              <button
+                key={opt}
+                onClick={() => setTarget(opt)}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+                  target === opt ? "accent-gradient text-white" : "text-muted hover:text-foreground"
+                }`}
+              >
+                {opt === "item" ? t("searchTargetItem", locale) : t("searchTargetBook", locale)}
+              </button>
+            ))}
+          </div>
+          {target === "book" && <p className="mt-2 text-xs text-muted">{t("searchBookNote", locale)}</p>}
+        </section>
+      )}
+
       <section className="panel mt-4 flex flex-wrap items-end gap-4 p-4">
         <div>
           <label className="text-xs font-semibold uppercase tracking-wide text-muted">
@@ -110,7 +141,7 @@ export default function SearchMode() {
           </select>
         </div>
 
-        {!enchant.treasureOnly && (
+        {!enchant.treasureOnly && target === "item" && (
           <div>
             <label className="text-xs font-semibold uppercase tracking-wide text-muted">
               {t("searchItemLabel", locale)}
@@ -194,7 +225,42 @@ export default function SearchMode() {
               </div>
             ))}
           </div>
-          <p className="mt-3 text-xs text-muted">{t("searchMonteCarloNote", locale)}</p>
+          <p className="mt-3 text-xs text-muted">{t("searchMonteCarloNoteItem", locale)}</p>
+        </section>
+      )}
+
+      {bookResults && (
+        <section className="mt-6">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+            {t("searchBestCombosPrefix", locale)} {t("enchantedBook", locale)}
+          </h3>
+          <div className="mt-3 space-y-2">
+            {bookResults.slice(0, 8).map((r, i) => (
+              <div
+                key={r.level}
+                className={`panel flex items-center gap-3 p-3 ${i === 0 ? "glint ring-1 ring-[var(--accent-solid)]" : ""}`}
+              >
+                <span className="w-6 shrink-0 text-center text-base">{RANK_MEDAL[i] ?? i + 1}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-sm font-medium">
+                      {t("levelPrefix", locale)} {r.level}
+                    </span>
+                    <span className="font-display shrink-0 text-sm font-bold accent-text">
+                      {(r.probability * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-raised)]">
+                    <div
+                      className="accent-gradient h-full rounded-full"
+                      style={{ width: `${Math.min(100, r.probability * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-muted">{t("searchMonteCarloNoteBook", locale)}</p>
         </section>
       )}
 

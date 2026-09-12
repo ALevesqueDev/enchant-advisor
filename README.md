@@ -53,6 +53,7 @@ npm install
 npm run dev      # http://localhost:3000
 npm run build    # production build
 npm run lint
+npm run test     # Vitest — the pure game-logic modules (recommend, anvil, table odds, share links)
 node scripts/check-game-version.mjs   # manual version-freshness check
 ```
 

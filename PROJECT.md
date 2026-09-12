@@ -262,14 +262,17 @@ no-accounts design).
     message instead of a blank white screen, plus a `<noscript>` fallback
     for the (rare, since this is a fully client-rendered app) case of JS
     failing to load at all.
-13. **Lightweight test suite (Vitest) for the pure logic** — `recommend.ts`,
-    `anvil.ts` (including the build-up cost formula and its
-    order-invariance proof), the bookshelf formula in `tableOdds.ts`, and
-    `shareLink.ts`'s encode/decode round-trip. All of this was verified by
-    hand during development (manual calculations, throwaway scripts) —
-    locking it down with real tests means the next change that breaks one
-    of these formulas gets caught immediately instead of silently.
-    Dev-only dependency, zero bytes shipped to users.
+13. ~~Lightweight test suite (Vitest) for the pure logic~~ — done: 31 tests
+    across `recommend.test.ts`, `anvil.test.ts` (including the build-up
+    cost formula against the confirmed-live numbers from the anvil
+    optimizer's roadmap entry, and the order-invariance claim itself),
+    `tableOdds.test.ts` (the bookshelf formula's deterministic level
+    ranges), and `shareLink.test.ts` (encode/decode round-trips,
+    malformed-input handling, SSR-safety of `patchShareParams`). Plain
+    Node environment, no jsdom — nothing under test touches the DOM.
+    `vitest` is a devDependency only (`npm run test`), zero bytes shipped
+    to users; bumped `@types/node` to `^24` alongside it since Vitest 5
+    requires it and the project already runs on Node 24.
 14. **Accessibility pass** — add `aria-label`s where a control's accessible
     name isn't already obvious from visible text (icon-only buttons,
     decorative rarity dots), and do a quick contrast/keyboard-navigation

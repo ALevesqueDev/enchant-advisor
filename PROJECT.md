@@ -329,12 +329,18 @@ nothing new user-facing, nothing that adds runtime weight.
     a crash, so there's nothing to be defensive about. Verified with a
     real request to a nonexistent path locally (HTTP 404, correct
     bilingual copy rendered).
-19. **Open Graph / social preview metadata** — shareable links (the app's
-    own headline feature) currently paste into Discord/Reddit/etc. as a
-    bare URL with no preview. Adding `openGraph`/`twitter` metadata
-    (title, description, one static preview image) makes a shared link
-    actually show something — directly reinforces the shareable-builds
-    feature rather than being a separate concern.
+19. ~~Open Graph / social preview metadata~~ — done: `layout.tsx` adds
+    `openGraph`/`twitter` metadata plus `metadataBase` (needed to resolve
+    the image into the absolute URL these platforms require) so a shared
+    link (the app's own headline feature) actually shows a preview when
+    pasted into Discord/Reddit/etc. instead of a bare URL. `og-image.png`
+    is the app's own sparkle mark on its dark background — generated the
+    same way the PWA icons were (a throwaway Node script, raw PNG bytes
+    via built-in zlib, no image tool available) — deliberately without
+    the app name baked into the image, since Discord/Twitter/etc. already
+    render the `title` field as visible text alongside it. Verified
+    locally: correct `og:*`/`twitter:*` tags with absolute URLs, image
+    served with the right content-type.
 20. **Print stylesheet** — pure CSS (`@media print`), no JS: hides the
     buttons/toggles and keeps just the tables (recommendation, anvil
     cost, search odds) for anyone who wants a paper copy next to their

@@ -22,9 +22,17 @@ const cinzel = Cinzel({
   weight: ["500", "600", "700"],
 });
 
+const SITE_URL = "https://enchant-advisor.vercel.app";
+const DESCRIPTION =
+  "Recommande les meilleurs enchantements Minecraft à ajouter selon l'objet, ce qui est déjà dessus, et l'objectif visé.";
+
 export const metadata: Metadata = {
+  // Resolves the relative image URLs below into absolute ones — required
+  // for Open Graph/Twitter previews, which most platforms fetch directly
+  // rather than resolving relative to the page.
+  metadataBase: new URL(SITE_URL),
   title: "Enchant Advisor",
-  description: "Recommande les meilleurs enchantements Minecraft à ajouter selon l'objet, ce qui est déjà dessus, et l'objectif visé.",
+  description: DESCRIPTION,
   // iOS ignores the web app manifest entirely — these are what actually
   // make "Add to Home Screen" open in standalone (no browser chrome) mode
   // on an iPhone/iPad. Android/desktop Chrome use manifest.ts instead.
@@ -32,6 +40,27 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Enchant Advisor",
+  },
+  // Makes a shared link (the app's own headline feature — see
+  // shareLink.ts) actually show a preview when pasted into Discord/
+  // Reddit/etc. instead of a bare URL. og-image.png is the app's own
+  // sparkle mark (see public/og-image.png's generator script) — no app
+  // name baked into the image itself, since Discord/Twitter/etc. already
+  // render `title` below as visible text alongside it.
+  openGraph: {
+    title: "Enchant Advisor",
+    description: DESCRIPTION,
+    url: SITE_URL,
+    siteName: "Enchant Advisor",
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+    locale: "fr_FR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Enchant Advisor",
+    description: DESCRIPTION,
+    images: ["/og-image.png"],
   },
 };
 

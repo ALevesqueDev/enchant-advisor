@@ -450,3 +450,54 @@ each:
     be *Speculative Generality* — solving a change that isn't happening —
     which the same smell baseline warns against just as much as the
     smells it would "fix".
+
+## Post-v1.0 roadmap (reliable, high-value additions only)
+
+Bedrock Edition support was considered and explicitly rejected (see below)
+— everything here stays Java-only. Three items agreed on, in order:
+
+1. ~~Acquisition hints in the advisor~~ — done (v1.1.0): each "to add"/"to
+   upgrade" recommendation can show its best acquisition method (table,
+   book, trading, or fishing) inline, via a "How do I get these?" button.
+   `bestMethod.ts`'s per-enchant assembly logic (previously only inline in
+   `SearchMode.tsx`) was pulled out into `computeBestMethods()` — a real
+   seam now that there are two call sites, not a hypothetical one — so
+   both modes share it instead of duplicating the table/book/trade/fish
+   orchestration. Fixed at 15 bookshelves / no Luck of the Sea and a
+   smaller Monte-Carlo trial count (1500 vs search mode's own 6000/8000
+   defaults) since this computes a whole goal's worth of enchants in one
+   batch rather than the one enchant search mode focuses on — measured at
+   ~120ms for a typical 4-enchant goal, not a UX concern. Recomputed
+   whenever the target set changes (compared by a derived key at render
+   time, not reset via an Effect — kept to React's own guidance on
+   deriving instead of synchronizing state).
+2. **Aggregate shopping-list totals** — a grand total (level-1 books, XP
+   levels, lapis) across every recommended enchantment in one anvil plan,
+   not just the existing per-row numbers.
+3. **Enchantment conflicts shown in search mode** — reuse
+   `incompatibleWith` (already verified against raw game data) to show
+   what a searched enchantment can't be combined with, without needing to
+   switch to the advisor to discover that.
+4. **Anvil build-up interleaving optimizer** — bigger, deliberately
+   scoped separately (see `anvil.ts`'s header on why the current model
+   treats "getting a book to the target level" and "combining books onto
+   the item" as two separate phases rather than one interleaved sequence)
+   — likely worth a `grilling` pass before implementation to size it
+   properly rather than guessing scope.
+
+### Bedrock Edition — rejected
+
+Researched (multiple independently-corroborated sources) before deciding:
+Bedrock and Java actually share the SAME enchanting-table and anvil
+formulas since the 1.20 parity update — the two most complex parts of
+this app's engine. What genuinely differs (some per-item enchant
+exclusivity, trading percentages) is real but narrower than expected.
+The decision to skip it anyway: Bedrock has **no generated-data
+equivalent to `misode/mcmeta`** — `Mojang/bedrock-samples` covers loot
+tables/recipes, not the enchant-mechanics internals, so anything
+Bedrock-specific would have to be sourced from wiki pages and reverse
+engineering with no raw-data fallback ever available. That's a permanent
+ceiling on the confidence this project could ever put behind a Bedrock
+number, in a codebase whose whole credibility rests on "verified against
+real generated data, not a wiki summary" (see the Cleaving/wind_burst
+incidents above) — not worth compromising that principle for.

@@ -56,6 +56,14 @@ const UI = {
     fr: "⚠ Au moins une étape dépasse 39 niveaux — l'enclume refusera l'opération (\"Too Expensive!\") en survie/aventure. Retire un objectif de moindre priorité, ou termine ce combo en mode créatif.",
   },
 
+  advisorAcquisitionButton: { en: "✦ How do I get these?", fr: "✦ Comment obtenir ça?" },
+  advisorAcquisitionCalculating: { en: "Calculating…", fr: "Calcul en cours…" },
+  advisorAcquisitionBestWay: { en: "Best way to get it:", fr: "Meilleure façon de l'obtenir :" },
+  advisorAcquisitionNote: {
+    en: "Assumes 15 bookshelves and no Luck of the Sea — switch to Enchantment Search for a specific setup.",
+    fr: "Suppose 15 étagères et pas de Luck of the Sea — passe par Recherche d'enchantement pour ta configuration précise.",
+  },
+
   searchEnchantmentLabel: { en: "Enchantment to search for", fr: "Enchantement recherché" },
   searchLevelLabel: { en: "Target level", fr: "Niveau visé" },
   searchItemLabel: { en: "Item", fr: "Objet" },

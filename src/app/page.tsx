@@ -5,10 +5,11 @@ import { enchantmentById, enchantmentsFor } from "@/lib/enchantments";
 import { GOALS } from "@/lib/goals";
 import { recommend, untouchedCurrentEnchants } from "@/lib/recommend";
 import { planAnvilCombines, planBuildUp } from "@/lib/anvil";
+import { computeBestMethods, type RankedMethod, type MethodDetail } from "@/lib/bestMethod";
 import { CATEGORY_ICON, rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
 import { enchantmentName, itemName, bareItemName, LOCALE_LABELS, type Locale } from "@/lib/i18n";
 import { materialsFor, type Material } from "@/lib/materials";
-import { t, blockedByNote, levelTargetNote } from "@/lib/strings";
+import { t, blockedByNote, levelTargetNote, slotLabel, methodLabel, expectedAttemptsNote } from "@/lib/strings";
 import { encodeHave, readShareParams, patchShareParams } from "@/lib/shareLink";
 import { useLocale } from "./LocaleContext";
 import { advisorReducer, initialAdvisorState, CATEGORIES } from "./advisorState";
@@ -62,6 +63,39 @@ function RarityDot({ weight, locale }: { weight: number; locale: Locale }) {
       className="inline-block h-2 w-2 shrink-0 rounded-full"
       style={{ background: `var(${RARITY_VAR[rarity]})`, boxShadow: `0 0 6px var(${RARITY_VAR[rarity]})` }}
     />
+  );
+}
+
+/**
+ * Compact one-line rendering of the single top-ranked acquisition method
+ * for one recommendation row — see bestMethod.ts's computeBestMethods().
+ * Deliberately just the winner, not a full ranked list (RankedResultsList
+ * is for search mode's dedicated section; a whole ranked list per
+ * recommendation row would overwhelm this compact list).
+ */
+function AcquisitionHint({
+  method,
+  category,
+  locale,
+}: {
+  method: RankedMethod<MethodDetail>;
+  category: Parameters<typeof itemName>[0];
+  locale: Locale;
+}) {
+  const probabilityDigits = method.kind === "trading" || method.kind === "fishing" ? 3 : 1;
+  return (
+    <p className="mt-1 text-xs text-muted">
+      {t("advisorAcquisitionBestWay", locale)} {methodLabel(method.kind, locale)}
+      {method.kind === "table_item" && method.detail?.slot && (
+        <>
+          {" "}
+          · {itemName(category, method.detail.material as Material, locale)} · {slotLabel(method.detail.slot, locale)}
+        </>
+      )}
+      {method.kind === "table_book" && method.detail?.slot && <> · {slotLabel(method.detail.slot, locale)}</>}
+      {" — "}
+      {(method.probability * 100).toFixed(probabilityDigits)}% ({expectedAttemptsNote(method.expectedAttempts, locale)})
+    </p>
   );
 }
 
@@ -139,6 +173,47 @@ export default function Home() {
     .map((r) => ({ id: r.enchantId, level: r.targetLevel }));
   const anvilPlan = useMemo(() => planAnvilCombines(anvilTargets), [anvilTargets]);
   const currentLevelByEnchant = new Map(recommendations.map((r) => [r.enchantId, r.currentLevel]));
+
+  // "How do I get these?" — reuses bestMethod.ts's computeBestMethods (built
+  // for search mode) so the advisor can answer that without the user
+  // having to switch modes and re-enter each enchant/level by hand. Fixed
+  // 15 bookshelves / no Luck of the Sea (search mode is where those get
+  // tuned precisely) and a smaller trial count than search mode's own
+  // default, since this computes several enchants in one batch instead of
+  // just the one the user is actively focused on.
+  //
+  // Stores which target set it was computed FOR (recommendationsKey)
+  // alongside the data, and compares that at render time below, rather
+  // than an effect that clears it on every target-set change — React's own
+  // guidance is to derive this during render instead of synchronizing
+  // state via an Effect (see react-hooks/set-state-in-effect).
+  const recommendationsKey = recommendations.map((r) => `${r.enchantId}:${r.status}:${r.targetLevel}`).join(",");
+  const [acquisitionMethods, setAcquisitionMethods] = useState<{
+    forKey: string;
+    data: Record<string, RankedMethod<MethodDetail>[]>;
+  } | null>(null);
+  const [calculatingAcquisition, setCalculatingAcquisition] = useState(false);
+  const currentAcquisition = acquisitionMethods?.forKey === recommendationsKey ? acquisitionMethods.data : null;
+
+  function computeAcquisitionMethods() {
+    setCalculatingAcquisition(true);
+    setTimeout(() => {
+      const next: Record<string, RankedMethod<MethodDetail>[]> = {};
+      for (const r of recommendations) {
+        if (r.status !== "add" && r.status !== "upgrade") continue;
+        const ranked = computeBestMethods({
+          category,
+          enchantId: r.enchantId,
+          level: r.targetLevel,
+          bookshelves: 15,
+          trialsPerPoint: 1500,
+        });
+        if (ranked) next[r.enchantId] = ranked;
+      }
+      setAcquisitionMethods({ forKey: recommendationsKey, data: next });
+      setCalculatingAcquisition(false);
+    }, 10);
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
@@ -303,6 +378,9 @@ export default function Home() {
                             ? blockedByNote(enchantmentName(r.conflictsWith!, locale), locale)
                             : levelTargetNote(r.currentLevel, r.targetLevel, locale)}
                         </div>
+                        {currentAcquisition?.[r.enchantId]?.[0] && (
+                          <AcquisitionHint method={currentAcquisition[r.enchantId][0]} category={category} locale={locale} />
+                        )}
                       </div>
                     </div>
                     <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[r.status]}`}>
@@ -317,6 +395,16 @@ export default function Home() {
                 {t("keptNoImpact", locale)} {untouched.map((id) => enchantmentName(id, locale)).join(", ")}.
               </p>
             )}
+            {recommendations.some((r) => r.status === "add" || r.status === "upgrade") && !currentAcquisition && (
+              <button
+                onClick={computeAcquisitionMethods}
+                disabled={calculatingAcquisition}
+                className="no-print glint accent-gradient mt-3 rounded-full px-4 py-2 text-xs font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
+              >
+                {calculatingAcquisition ? t("advisorAcquisitionCalculating", locale) : t("advisorAcquisitionButton", locale)}
+              </button>
+            )}
+            {currentAcquisition && <p className="mt-2 text-xs text-muted">{t("advisorAcquisitionNote", locale)}</p>}
           </section>
 
           {/* Anvil plan */}

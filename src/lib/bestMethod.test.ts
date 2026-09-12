@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { rankMethods } from "./bestMethod";
+import { rankMethods, computeBestMethods } from "./bestMethod";
+import { isStructureLootOnly } from "./treasure";
 
 describe("rankMethods", () => {
   it("sorts by probability descending", () => {
@@ -29,5 +30,48 @@ describe("rankMethods", () => {
 
   it("returns an empty ranking for an empty input", () => {
     expect(rankMethods([])).toEqual([]);
+  });
+});
+
+describe("computeBestMethods", () => {
+  it("ranks table + book + trading + fishing for an ordinary non-treasure enchant", () => {
+    const ranked = computeBestMethods({
+      category: "pickaxe",
+      enchantId: "efficiency",
+      level: 3,
+      bookshelves: 15,
+      trialsPerPoint: 500, // small trial count -- this test only checks shape/ordering, not exact odds (see tableOdds.test.ts for the formula itself)
+    });
+    expect(ranked).not.toBeNull();
+    const kinds = ranked!.map((r) => r.kind).sort();
+    expect(kinds).toEqual(["fishing", "table_book", "table_item", "trading"]);
+    // Results should already be sorted descending by probability.
+    for (let i = 1; i < ranked!.length; i++) {
+      expect(ranked![i - 1].probability).toBeGreaterThanOrEqual(ranked![i].probability);
+    }
+  });
+
+  it("skips the table methods for a treasure-only enchant (the table can never offer it)", () => {
+    const ranked = computeBestMethods({
+      category: "boots",
+      enchantId: "frost_walker",
+      level: 2,
+      bookshelves: 15,
+      trialsPerPoint: 500,
+    });
+    expect(ranked!.some((r) => r.kind === "table_item" || r.kind === "table_book")).toBe(false);
+    expect(ranked!.some((r) => r.kind === "trading" || r.kind === "fishing")).toBe(true);
+  });
+
+  it("returns only structure-loot-only enchants with no trading/fishing methods", () => {
+    expect(isStructureLootOnly("swift_sneak")).toBe(true);
+    const ranked = computeBestMethods({
+      category: "leggings",
+      enchantId: "swift_sneak",
+      level: 1,
+      bookshelves: 15,
+      trialsPerPoint: 500,
+    });
+    expect(ranked).toBeNull();
   });
 });

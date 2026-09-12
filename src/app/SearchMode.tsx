@@ -3,16 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { ENCHANTMENTS, enchantmentById } from "@/lib/enchantments";
 import { materialsFor, enchantability, type Material } from "@/lib/materials";
-import {
-  findBestTableOdds,
-  findBestBookOdds,
-  slotLevelRange,
-  type BestTableCombo,
-  type BestBookSlot,
-  type EnchantingSlot,
-} from "@/lib/tableOdds";
+import { findBestTableOdds, findBestBookOdds, slotLevelRange, type BestTableCombo, type BestBookSlot } from "@/lib/tableOdds";
 import { treasureOdds, treasureSourceNote, isStructureLootOnly, type TreasureOddsResult } from "@/lib/treasure";
-import { rankMethods, type RankableMethod } from "@/lib/bestMethod";
+import { rankMethods, type RankableMethod, type MethodDetail } from "@/lib/bestMethod";
 import { rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
 import { enchantmentName, itemName, bareItemName } from "@/lib/i18n";
 import { t, slotLabel, methodLabel, expectedAttemptsNote } from "@/lib/strings";
@@ -32,12 +25,6 @@ interface Results {
   table: BestTableCombo[] | null;
   book: BestBookSlot[] | null;
   tradeAndFish: TreasureOddsResult[] | null;
-}
-
-/** material only applies to the table_item method; slot to both table methods. */
-interface MethodDetail {
-  material?: string;
-  slot?: EnchantingSlot;
 }
 
 export default function SearchMode() {

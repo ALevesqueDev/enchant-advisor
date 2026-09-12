@@ -6,7 +6,7 @@ import { materialsFor, enchantability, type Material } from "@/lib/materials";
 import { findBestTableOdds, findBestBookOdds, type BestTableCombo, type BestBookLevel } from "@/lib/tableOdds";
 import { treasureOdds, type TreasureOddsResult } from "@/lib/treasure";
 import { rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
-import { enchantmentName, itemName, representativeItemName } from "@/lib/i18n";
+import { enchantmentName, itemName, bareItemName } from "@/lib/i18n";
 import { t } from "@/lib/strings";
 import { useLocale } from "./LocaleContext";
 import type { ItemCategory } from "@/lib/types";
@@ -153,7 +153,7 @@ export default function SearchMode() {
             >
               {enchant.categories.map((c) => (
                 <option key={c} value={c}>
-                  {representativeItemName(c, locale)}
+                  {bareItemName(c, locale)}
                 </option>
               ))}
             </select>
@@ -197,7 +197,7 @@ export default function SearchMode() {
       {tableResults && (
         <section className="mt-6">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
-            {t("searchBestCombosPrefix", locale)} {representativeItemName(category, locale)}
+            {t("searchBestCombosPrefix", locale)} {bareItemName(category, locale)}
           </h3>
           <div className="mt-3 space-y-2">
             {tableResults.slice(0, 8).map((r, i) => (

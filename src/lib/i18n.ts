@@ -42,11 +42,20 @@ export function itemName(category: ItemCategory, material: Material | undefined,
 }
 
 /**
- * A representative real name for a category when no specific material is
- * chosen (the advisor flow doesn't track material) — diamond is the most
- * commonly-referenced tier, so "Diamond Pickaxe" / "Pioche en diamant"
- * stands in for "pickaxe" as a concept.
+ * The bare item name with no material baked in — for a category picker,
+ * where showing "Diamond Pickaxe" for every option regardless of which
+ * material is actually selected elsewhere on the page is misleading (the
+ * material dropdown is a separate, explicit control; this shouldn't repeat
+ * or contradict it). Minecraft has no standalone translation key for
+ * "pickaxe" without a material (verified against en_us.json/fr_fr.json —
+ * there's no `item.minecraft.pickaxe`), but the real per-material names
+ * follow a perfectly regular pattern in both languages ("Diamond {Item}" /
+ * "{Item} en diamant"), confirmed across all 10 material-bearing
+ * categories — so this strips the material off the Diamond-tier real name
+ * rather than inventing a translation.
  */
-export function representativeItemName(category: ItemCategory, locale: Locale): string {
-  return itemName(category, "diamond", locale);
+export function bareItemName(category: ItemCategory, locale: Locale): string {
+  const diamondName = itemName(category, "diamond", locale);
+  if (FIXED_CATEGORIES.includes(category)) return diamondName;
+  return locale === "en" ? diamondName.replace(/^Diamond /, "") : diamondName.replace(/ en diamant$/, "");
 }

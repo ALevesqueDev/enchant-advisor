@@ -6,7 +6,7 @@ import { GOALS } from "@/lib/goals";
 import { recommend, untouchedCurrentEnchants } from "@/lib/recommend";
 import { planAnvilCombines } from "@/lib/anvil";
 import { CATEGORY_ICON, rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
-import { enchantmentName, itemName, representativeItemName, LOCALE_LABELS, type Locale } from "@/lib/i18n";
+import { enchantmentName, itemName, bareItemName, LOCALE_LABELS, type Locale } from "@/lib/i18n";
 import { materialsFor, type Material } from "@/lib/materials";
 import { t, blockedByNote, levelTargetNote } from "@/lib/strings";
 import { useLocale } from "./LocaleContext";
@@ -167,7 +167,7 @@ export default function Home() {
                   }`}
                 >
                   <span className="text-xl">{CATEGORY_ICON[c]}</span>
-                  {c === category ? itemName(c, material, locale) : representativeItemName(c, locale)}
+                  {bareItemName(c, locale)}
                 </button>
               ))}
             </div>

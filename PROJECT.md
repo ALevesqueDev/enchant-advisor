@@ -177,11 +177,19 @@ on which of these you actually want first.
    The anvil calculator didn't need changes: it already assumed "each
    enchantment arrives via a fresh book," which is the book's own eventual
    fate regardless of how it got that enchantment.
-6. **Full anvil optimizer** — model pre-combining two low-level books into
-   a higher-level one before it ever touches the final item, which is where
-   combine *order* actually starts to affect total cost (today's calculator
-   correctly says order doesn't matter, but only because it doesn't model
-   this cheaper path).
+6. ~~Full anvil optimizer~~ — done, with a deliberate scope line:
+   `planBuildUp()` in `anvil.ts` prices leveling an enchantment up from
+   scratch via repeated equal-level merges (combining two copies at the
+   SAME level bumps the result by exactly one level — verified against
+   multiple sources this time, not just one wiki fetch). Shown as a
+   supplementary note per anvil-plan row where the target level is above 1.
+   **Not done**: this is intentionally decoupled from the main sequential
+   plan rather than fully interleaved — modeling "level up enchant A while
+   also touching the item for enchants B and C in some interleaved order"
+   is a much bigger combinatorial problem, and the linear build-up chain
+   already provably costs the same as the more obvious-looking balanced
+   binary tree (see the proof in `anvil.ts`), so there was no cheaper
+   structure being left on the table by skipping that interleaving.
 7. **Shareable builds** — serialize the current item/enchants/goal (or
    search) selection into the URL query string so a link can be shared
    without needing any backend/accounts.

@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { ITEM_CATEGORY_LABELS, enchantmentById, enchantmentsFor } from "@/lib/enchantments";
 import { GOALS } from "@/lib/goals";
 import { recommend, untouchedCurrentEnchants } from "@/lib/recommend";
-import { planAnvilCombines } from "@/lib/anvil";
+import { planAnvilCombines, planBuildUp } from "@/lib/anvil";
 import { CATEGORY_ICON, rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
 import { enchantmentName, itemName, bareItemName, LOCALE_LABELS, type Locale } from "@/lib/i18n";
 import { materialsFor, type Material } from "@/lib/materials";
@@ -113,6 +113,7 @@ export default function Home() {
     .filter((r) => r.status === "add" || r.status === "upgrade")
     .map((r) => ({ id: r.enchantId, level: r.targetLevel }));
   const anvilPlan = useMemo(() => planAnvilCombines(anvilTargets), [anvilTargets]);
+  const currentLevelByEnchant = new Map(recommendations.map((r) => [r.enchantId, r.currentLevel]));
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
@@ -291,21 +292,37 @@ export default function Home() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--surface-border)]">
-                    {anvilPlan.steps.map((s, i) => (
-                      <tr key={s.enchantId} className={s.tooExpensive ? "bg-[var(--status-conflict-bg)]" : undefined}>
-                        <td className="px-4 py-2.5 text-muted">{i + 1}</td>
-                        <td className="px-4 py-2.5">
-                          {enchantmentName(s.enchantId, locale)} {s.level}
-                        </td>
-                        <td className="px-4 py-2.5 text-right text-muted">{s.priorWorkPenalty}</td>
-                        <td className="px-4 py-2.5 text-right">
-                          {s.stepCost} {s.tooExpensive && "⚠"}
-                        </td>
-                        <td className="px-4 py-2.5 text-right font-medium">
-                          {anvilPlan.steps.slice(0, i + 1).reduce((sum, x) => sum + x.stepCost, 0)}
-                        </td>
-                      </tr>
-                    ))}
+                    {anvilPlan.steps.map((s, i) => {
+                      const enchant = enchantmentById(s.enchantId);
+                      const buildUp = planBuildUp(enchant.anvilCost, currentLevelByEnchant.get(s.enchantId) ?? 0, s.level);
+                      return (
+                        <Fragment key={s.enchantId}>
+                          <tr className={s.tooExpensive ? "bg-[var(--status-conflict-bg)]" : undefined}>
+                            <td className="px-4 py-2.5 text-muted">{i + 1}</td>
+                            <td className="px-4 py-2.5">
+                              {enchantmentName(s.enchantId, locale)} {s.level}
+                            </td>
+                            <td className="px-4 py-2.5 text-right text-muted">{s.priorWorkPenalty}</td>
+                            <td className="px-4 py-2.5 text-right">
+                              {s.stepCost} {s.tooExpensive && "⚠"}
+                            </td>
+                            <td className="px-4 py-2.5 text-right font-medium">
+                              {anvilPlan.steps.slice(0, i + 1).reduce((sum, x) => sum + x.stepCost, 0)}
+                            </td>
+                          </tr>
+                          {buildUp && (
+                            <tr>
+                              <td />
+                              <td colSpan={4} className="px-4 pb-2.5 text-xs text-muted">
+                                {t("anvilBuildUpNote", locale)} <strong className="text-foreground">{buildUp.totalCost}</strong> XP
+                                {buildUp.anyTooExpensive && " ⚠"} — {buildUp.level1BooksNeeded}{" "}
+                                {t("anvilBuildUpBooksSuffix", locale)}
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

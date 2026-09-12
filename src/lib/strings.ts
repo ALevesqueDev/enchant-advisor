@@ -41,6 +41,14 @@ const UI = {
   anvilCost: { en: "Cost", fr: "Coût" },
   anvilTotal: { en: "Total", fr: "Total" },
   anvilXpTotalSuffix: { en: "XP levels total.", fr: "niveaux d'XP au total." },
+  anvilBuildUpNote: {
+    en: "If you can't get this level directly: building it up from Level 1 books via repeated same-level combines costs an extra",
+    fr: "Si tu n'as pas ce niveau directement : le construire à partir de livres niveau 1 en combinant des paires de même niveau coûte",
+  },
+  anvilBuildUpBooksSuffix: {
+    en: "Level 1 books needed.",
+    fr: "livres niveau 1 nécessaires.",
+  },
   anvilTooExpensive: {
     en: '⚠ At least one step exceeds 39 levels — the anvil will refuse the operation ("Too Expensive!") in Survival/Adventure. Drop a lower-priority goal, or finish this combo in Creative mode.',
     fr: "⚠ Au moins une étape dépasse 39 niveaux — l'enclume refusera l'opération (\"Too Expensive!\") en survie/aventure. Retire un objectif de moindre priorité, ou termine ce combo en mode créatif.",

@@ -112,6 +112,10 @@ const UI = {
 
   footerReportLink: { en: "🐙 Report a bug / suggest an improvement", fr: "🐙 Signaler un bug / suggérer une amélioration" },
   opensInNewTab: { en: "(opens in a new tab)", fr: "(ouvre un nouvel onglet)" },
+  offlineBanner: {
+    en: "📡 You're offline — showing the cached version. Some numbers may be out of date until you're back online.",
+    fr: "📡 Tu es hors-ligne — version enregistrée affichée. Certains chiffres peuvent dater jusqu'à ta reconnexion.",
+  },
   footerRights: {
     en: "— source visible for transparency, all rights reserved.",
     fr: "— code source visible à titre informatif, tous droits réservés.",

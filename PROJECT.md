@@ -290,10 +290,14 @@ no-accounts design).
     tool this session to measure it) — the existing palette was already
     designed with light/dark contrast in mind (see globals.css), so this
     is a lower-confidence claim than the rest of this item.
-15. **Offline banner** — the PWA service worker (item 10) already caches
-    everything for genuine offline use, but nothing tells the user they're
-    offline and looking at a cached copy. A small `navigator.onLine`-driven
-    banner closes that loop with no new dependency.
+15. ~~Offline banner~~ — done: `OfflineBanner.tsx` listens for the
+    browser's `online`/`offline` events and shows a small dismissed-when-
+    online banner (`role="status"`/`aria-live` so it's announced, not just
+    shown) explaining that a cached copy is being served and numbers may
+    be stale until reconnected. `navigator.onLine` isn't available during
+    the static build's server-side prerender, so it defaults to "online"
+    there and self-corrects immediately on mount in a real browser — same
+    hydrate-after-mount pattern as `LocaleContext`'s localStorage read.
 16. **Pre-filled bug report link** — the footer's "report a bug" link
     currently opens a blank GitHub issue. Since shareable links (item 7)
     already encode the exact current selection, pre-filling the issue body

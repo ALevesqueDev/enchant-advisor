@@ -15,6 +15,7 @@ import type { EnchantSet, ItemCategory } from "@/lib/types";
 import SearchMode from "./SearchMode";
 import Footer from "./Footer";
 import CopyLinkButton from "./CopyLinkButton";
+import OfflineBanner from "./OfflineBanner";
 
 const CATEGORIES = Object.keys(ITEM_CATEGORY_LABELS) as ItemCategory[];
 
@@ -189,6 +190,7 @@ export default function Home() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+      <OfflineBanner locale={locale} />
       {/* Hero */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="text-center sm:text-left">

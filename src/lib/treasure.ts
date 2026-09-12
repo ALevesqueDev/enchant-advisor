@@ -1,15 +1,23 @@
 // Villager trading and fishing odds.
 //
-// Bug fixed 2026-09-13: this used to only compute these odds for the 4
-// treasure enchantments that are ALSO tradeable (Mending, Frost Walker, the
-// curses) and silently returned nothing for every other enchantment. But
-// the `tradeable`/`on_random_loot` tags cover 40 of our 43 enchantments —
-// almost every non-treasure enchantment (Sharpness, Protection, Efficiency,
-// ...) is ALSO obtainable this way, not just the treasure-flavored ones.
-// Only Soul Speed, Swift Sneak, and Wind Burst are excluded from both tags
-// (structure loot only). See enchantments.ts/PROJECT.md for how
-// `treasureOnly` (which enchantments the TABLE can offer) was derived from
-// the real `non_treasure` tag — that flag is unrelated to this one.
+// Bug fixed 2026-09-13 (functional): this used to only compute these odds
+// for the 4 treasure enchantments that are ALSO tradeable (Mending, Frost
+// Walker, the curses) and silently returned nothing for every other
+// enchantment. But the `tradeable`/`on_random_loot` tags cover 40 of our 43
+// enchantments — almost every non-treasure enchantment (Sharpness,
+// Protection, Efficiency, ...) is ALSO obtainable this way, not just the
+// treasure-flavored ones. Only Soul Speed, Swift Sneak, and Wind Burst are
+// excluded from both tags (structure loot only). See enchantments.ts /
+// PROJECT.md for how `treasureOnly` (which enchantments the TABLE can
+// offer) was derived from the real `non_treasure` tag — unrelated to this.
+//
+// Bug fixed 2026-09-12 (locale): treasureOdds() used to bake the note text
+// into the result at calculate-time using whatever locale was active then.
+// Toggling the language afterward left stale text on screen until the user
+// recalculated. Fixed by never storing rendered text at all — this module
+// returns plain numbers, and treasureSourceNote() renders them against
+// whatever locale is CURRENT at render time (called from SearchMode.tsx's
+// JSX, not from calculate()).
 
 import { ENCHANTMENTS, enchantmentById, nonTreasurePool } from "./enchantments";
 import { simulateTableOdds } from "./tableOdds";
@@ -34,14 +42,11 @@ function tradeableAndLootPool() {
   return [...nonTreasurePool(), ...additions];
 }
 
-export type TreasureSource = "fishing" | "trading" | "structure_loot_only";
-
-export interface TreasureOddsResult {
-  source: TreasureSource;
-  /** Probability per single fishing cast, or per single trade-slot re-roll. Undefined for structure_loot_only. */
-  probability?: number;
-  note: string;
-}
+/** Plain data only — no rendered text. See the locale-bug note above for why. */
+export type TreasureOddsResult =
+  | { source: "trading"; probability: number; poolSize: number }
+  | { source: "fishing"; probability: number; treasureCatchChancePercent: string; luckOfTheSeaLevel: number }
+  | { source: "structure_loot_only" };
 
 const LUCK_OF_THE_SEA_TREASURE_BONUS_PER_LEVEL = 0.021; // community-measured, not from raw data — see note in UI
 const BASE_TREASURE_CATCH_CHANCE = 0.05;
@@ -69,16 +74,25 @@ export function isStructureLootOnly(enchantId: string): boolean {
   return Boolean(STRUCTURE_ONLY_SOURCES[enchantId]);
 }
 
-function tradingNote(poolSize: number, locale: Locale): string {
-  return locale === "en"
-    ? `Uniform draw (not weighted by rarity) among ${poolSize} possible enchantments from a librarian (novice-to-expert tiers). The level you get is also random — you can't aim directly for the max level. Rerolling just costs a lectern (break/replace it to reroll the villager's job).`
-    : `Tirage uniforme (pas pondéré par rareté) parmi ${poolSize} enchantements possibles chez un bibliothécaire (paliers novice à expert). Le niveau obtenu est aussi aléatoire — on ne peut pas viser directement le niveau max. Recommencer coûte juste un lutrin (casser/replacer pour reroll le métier).`;
-}
-
-function fishingNote(treasureCatchChancePercent: string, luckOfTheSeaLevel: number, locale: Locale): string {
-  return locale === "en"
-    ? `≈${treasureCatchChancePercent}% "treasure" catch per cast (Luck of the Sea ${luckOfTheSeaLevel}) × 1/6 for it to be the book × the chance that book carries this enchantment at the target level. Approximate: the Luck of the Sea bonus is a community-measured value, not pulled from raw game data.`
-    : `≈${treasureCatchChancePercent}% de prise "trésor" par lancer (Luck of the Sea ${luckOfTheSeaLevel}) × 1/6 pour que ce soit le livre × chance que le livre porte cet enchantement au niveau visé. Approximatif : le bonus de Luck of the Sea est une valeur mesurée par la communauté, pas extraite des données brutes du jeu.`;
+/**
+ * Renders a TreasureOddsResult's explanatory note against whatever locale
+ * is current — call this from JSX at render time (with the live value from
+ * useLocale()), never at calculate-time, so a language switch never leaves
+ * stale text on screen.
+ */
+export function treasureSourceNote(result: TreasureOddsResult, enchantId: string, locale: Locale): string {
+  switch (result.source) {
+    case "trading":
+      return locale === "en"
+        ? `Uniform draw (not weighted by rarity) among ${result.poolSize} possible enchantments from a librarian (novice-to-expert tiers). The level you get is also random — you can't aim directly for the max level. Rerolling just costs a lectern (break/replace it to reroll the villager's job).`
+        : `Tirage uniforme (pas pondéré par rareté) parmi ${result.poolSize} enchantements possibles chez un bibliothécaire (paliers novice à expert). Le niveau obtenu est aussi aléatoire — on ne peut pas viser directement le niveau max. Recommencer coûte juste un lutrin (casser/replacer pour reroll le métier).`;
+    case "fishing":
+      return locale === "en"
+        ? `≈${result.treasureCatchChancePercent}% "treasure" catch per cast (Luck of the Sea ${result.luckOfTheSeaLevel}) × 1/6 for it to be the book × the chance that book carries this enchantment at the target level. Approximate: the Luck of the Sea bonus is a community-measured value, not pulled from raw game data.`
+        : `≈${result.treasureCatchChancePercent}% de prise "trésor" par lancer (Luck of the Sea ${result.luckOfTheSeaLevel}) × 1/6 pour que ce soit le livre × chance que le livre porte cet enchantement au niveau visé. Approximatif : le bonus de Luck of the Sea est une valeur mesurée par la communauté, pas extraite des données brutes du jeu.`;
+    case "structure_loot_only":
+      return STRUCTURE_ONLY_SOURCES[enchantId][locale];
+  }
 }
 
 /**
@@ -86,19 +100,15 @@ function fishingNote(treasureCatchChancePercent: string, luckOfTheSeaLevel: numb
  * pool (40 of our 43 — everything except the three structure-only ones).
  * Works the same whether the enchantment is treasure-only or not; the
  * caller decides what else to show alongside this (table/book odds only
- * make sense for non-treasure enchantments).
+ * make sense for non-treasure enchantments). Returns plain numbers — see
+ * treasureSourceNote() for rendering the explanatory text.
  */
-export function treasureOdds(
-  enchantId: string,
-  targetLevel: number,
-  locale: Locale,
-  luckOfTheSeaLevel = 0
-): TreasureOddsResult[] {
+export function treasureOdds(enchantId: string, targetLevel: number, luckOfTheSeaLevel = 0): TreasureOddsResult[] {
   const enchant = enchantmentById(enchantId);
   const results: TreasureOddsResult[] = [];
 
   if (STRUCTURE_ONLY_SOURCES[enchantId]) {
-    results.push({ source: "structure_loot_only", note: STRUCTURE_ONLY_SOURCES[enchantId][locale] });
+    results.push({ source: "structure_loot_only" });
     return results;
   }
 
@@ -108,11 +118,7 @@ export function treasureOdds(
   const poolSize = pool.length;
   const levelFraction = (enchant.maxLevel - targetLevel + 1) / enchant.maxLevel;
   const perRerollProbability = (1 / poolSize) * levelFraction;
-  results.push({
-    source: "trading",
-    probability: perRerollProbability,
-    note: tradingNote(poolSize, locale),
-  });
+  results.push({ source: "trading", probability: perRerollProbability, poolSize });
 
   // --- Fishing: treasure catch (1/6 items) -> book slot -> enchant_with_levels at level 30 ---
   const treasureCatchChance = BASE_TREASURE_CATCH_CHANCE + LUCK_OF_THE_SEA_TREASURE_BONUS_PER_LEVEL * luckOfTheSeaLevel;
@@ -129,7 +135,8 @@ export function treasureOdds(
   results.push({
     source: "fishing",
     probability: treasureCatchChance * bookSlotChance * bookEnchantChance,
-    note: fishingNote((treasureCatchChance * 100).toFixed(1), luckOfTheSeaLevel, locale),
+    treasureCatchChancePercent: (treasureCatchChance * 100).toFixed(1),
+    luckOfTheSeaLevel,
   });
 
   return results;

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ENCHANTMENTS, enchantmentById } from "@/lib/enchantments";
 import { materialsFor, enchantability, type Material } from "@/lib/materials";
 import { findBestTableOdds, findBestBookOdds, type BestTableCombo, type BestBookLevel } from "@/lib/tableOdds";
-import { treasureOdds, isStructureLootOnly, type TreasureOddsResult } from "@/lib/treasure";
+import { treasureOdds, treasureSourceNote, isStructureLootOnly, type TreasureOddsResult } from "@/lib/treasure";
 import { rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
 import { enchantmentName, itemName, bareItemName } from "@/lib/i18n";
 import { t } from "@/lib/strings";
@@ -70,7 +70,7 @@ export default function SearchMode() {
       }
 
       if (!structureOnly) {
-        next.tradeAndFish = treasureOdds(enchantId, level, locale, luckOfTheSea);
+        next.tradeAndFish = treasureOdds(enchantId, level, luckOfTheSea);
       }
 
       setResults(next);
@@ -261,13 +261,13 @@ export default function SearchMode() {
                     {r.source === "trading" && t("sourceTrading", locale)}
                     {r.source === "structure_loot_only" && t("sourceStructureOnly", locale)}
                   </span>
-                  {r.probability !== undefined && (
+                  {r.source !== "structure_loot_only" && (
                     <span className="font-display text-sm font-bold accent-text">
                       {(r.probability * 100).toFixed(3)}%
                     </span>
                   )}
                 </div>
-                <p className="mt-1.5 text-xs text-muted">{r.note}</p>
+                <p className="mt-1.5 text-xs text-muted">{treasureSourceNote(r, enchantId, locale)}</p>
               </div>
             ))}
           </div>

@@ -147,6 +147,17 @@ other 15 buttons keep showing their Diamond-tier name as a neutral preview.
 Search mode's ranked results already showed the item's actual matched
 material per row.
 
+**Rule going forward, learned from a real bug**: never bake rendered,
+locale-dependent text into `useState`. `treasureOdds()` used to build its
+`note` strings at calculate-time using whatever locale was active then —
+switch the language toggle afterward without recalculating, and the old
+language's text stayed on screen. Fixed by having that function return
+plain numbers only, with a separate `treasureSourceNote()` that renders
+against the CURRENT locale at render time, called directly from JSX. Every
+other computed result in the app (recommendations, anvil plans, table/book
+odds) was already numbers-only for unrelated reasons and didn't have this
+bug — this is now the pattern to keep following.
+
 **The material choice is display-only in the advisor** — `recommend()` and
 `planAnvilCombines()` don't take material as an input at all, since neither
 the enchantment recommendation nor the anvil XP cost actually depends on

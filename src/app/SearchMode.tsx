@@ -125,15 +125,20 @@ export default function SearchMode() {
   return (
     <div className="mt-8">
       <section className="panel p-4">
-        <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+        <label htmlFor="search-enchant-select" className="text-xs font-semibold uppercase tracking-wide text-muted">
           {t("searchEnchantmentLabel", locale)}
         </label>
         <div className="mt-2 flex items-center gap-2">
+          {/* Purely decorative here — the rarity is already spelled out in
+              visible text right below (unlike page.tsx's RarityDot, which
+              has no such text nearby and needs its own accessible name). */}
           <span
+            aria-hidden="true"
             className="h-2.5 w-2.5 shrink-0 rounded-full"
             style={{ background: `var(${RARITY_VAR[rarity]})`, boxShadow: `0 0 8px var(${RARITY_VAR[rarity]})` }}
           />
           <select
+            id="search-enchant-select"
             value={enchantId}
             onChange={(e) => changeEnchant(e.target.value)}
             className="w-full rounded-md border border-[var(--surface-border)] bg-[var(--surface-raised)] px-2 py-2 text-sm"
@@ -150,10 +155,11 @@ export default function SearchMode() {
 
       <section className="panel mt-4 flex flex-wrap items-end gap-4 p-4">
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+          <label htmlFor="search-level-select" className="text-xs font-semibold uppercase tracking-wide text-muted">
             {t("searchLevelLabel", locale)}
           </label>
           <select
+            id="search-level-select"
             value={level}
             onChange={(e) => setLevel(Number(e.target.value))}
             className="mt-1.5 block rounded-md border border-[var(--surface-border)] bg-[var(--surface-raised)] px-2 py-1.5 text-sm"
@@ -168,10 +174,11 @@ export default function SearchMode() {
 
         {!enchant.treasureOnly && (
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+            <label htmlFor="search-item-select" className="text-xs font-semibold uppercase tracking-wide text-muted">
               {t("searchItemLabel", locale)}
             </label>
             <select
+              id="search-item-select"
               value={category}
               onChange={(e) => setCategory(e.target.value as ItemCategory)}
               className="mt-1.5 block rounded-md border border-[var(--surface-border)] bg-[var(--surface-raised)] px-2 py-1.5 text-sm"
@@ -187,10 +194,11 @@ export default function SearchMode() {
 
         {!enchant.treasureOnly && (
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+            <label htmlFor="search-bookshelves-select" className="text-xs font-semibold uppercase tracking-wide text-muted">
               {t("searchBookshelvesLabel", locale)}
             </label>
             <select
+              id="search-bookshelves-select"
               value={bookshelves}
               onChange={(e) => setBookshelves(Number(e.target.value))}
               className="mt-1.5 block rounded-md border border-[var(--surface-border)] bg-[var(--surface-raised)] px-2 py-1.5 text-sm"
@@ -206,10 +214,11 @@ export default function SearchMode() {
 
         {!structureOnly && (
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+            <label htmlFor="search-luck-select" className="text-xs font-semibold uppercase tracking-wide text-muted">
               {t("searchLuckOfSeaLabel", locale)}
             </label>
             <select
+              id="search-luck-select"
               value={luckOfTheSea}
               onChange={(e) => setLuckOfTheSea(Number(e.target.value))}
               className="mt-1.5 block rounded-md border border-[var(--surface-border)] bg-[var(--surface-raised)] px-2 py-1.5 text-sm"
@@ -252,7 +261,10 @@ export default function SearchMode() {
                   key={`${r.material}-${r.slot}`}
                   className={`panel flex items-center gap-3 p-3 ${i === 0 ? "glint ring-1 ring-[var(--accent-solid)]" : ""}`}
                 >
-                  <span className="w-6 shrink-0 text-center text-base">{RANK_MEDAL[i] ?? i + 1}</span>
+                  {/* Decorative — rank is already conveyed by list order and the % shown right after. */}
+                  <span aria-hidden="true" className="w-6 shrink-0 text-center text-base">
+                    {RANK_MEDAL[i] ?? i + 1}
+                  </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="truncate text-sm font-medium">
@@ -293,7 +305,10 @@ export default function SearchMode() {
                   key={r.slot}
                   className={`panel flex items-center gap-3 p-3 ${i === 0 ? "glint ring-1 ring-[var(--accent-solid)]" : ""}`}
                 >
-                  <span className="w-6 shrink-0 text-center text-base">{RANK_MEDAL[i] ?? i + 1}</span>
+                  {/* Decorative — rank is already conveyed by list order and the % shown right after. */}
+                  <span aria-hidden="true" className="w-6 shrink-0 text-center text-base">
+                    {RANK_MEDAL[i] ?? i + 1}
+                  </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="truncate text-sm font-medium">
@@ -329,7 +344,9 @@ export default function SearchMode() {
               <div key={r.source} className="panel p-4">
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex items-center gap-2 text-sm font-medium">
-                    <span className="text-base">{SOURCE_ICON[r.source]}</span>
+                    <span aria-hidden="true" className="text-base">
+                      {SOURCE_ICON[r.source]}
+                    </span>
                     {r.source === "fishing" && t("sourceFishing", locale)}
                     {r.source === "trading" && t("sourceTrading", locale)}
                     {r.source === "structure_loot_only" && t("sourceStructureOnly", locale)}

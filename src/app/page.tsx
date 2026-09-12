@@ -38,11 +38,12 @@ function SectionLabel({ index, children }: { index: string; children: React.Reac
 
 function LocaleToggle({ locale, setLocale }: { locale: Locale; setLocale: (l: Locale) => void }) {
   return (
-    <div className="panel inline-flex gap-1 p-1">
+    <div className="panel inline-flex gap-1 p-1" role="group" aria-label="Language / Langue">
       {(Object.keys(LOCALE_LABELS) as Locale[]).map((l) => (
         <button
           key={l}
           onClick={() => setLocale(l)}
+          aria-pressed={l === locale}
           className={`rounded-md px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-all ${
             l === locale ? "accent-gradient text-white" : "text-muted hover:text-foreground"
           }`}
@@ -54,11 +55,18 @@ function LocaleToggle({ locale, setLocale }: { locale: Locale; setLocale: (l: Lo
   );
 }
 
+// This dot is the ONLY place rarity is shown in these list rows (no
+// separate text label nearby, unlike SearchMode's single-enchant panel) —
+// so it needs a real accessible name, not just a hover-only `title` that a
+// screen reader would skip on a nameless <span>.
 function RarityDot({ weight, locale }: { weight: number; locale: Locale }) {
   const rarity = rarityFromWeight(weight);
+  const label = rarityLabel(rarity, locale);
   return (
     <span
-      title={rarityLabel(rarity, locale)}
+      role="img"
+      aria-label={label}
+      title={label}
       className="inline-block h-2 w-2 shrink-0 rounded-full"
       style={{ background: `var(${RARITY_VAR[rarity]})`, boxShadow: `0 0 6px var(${RARITY_VAR[rarity]})` }}
     />
@@ -197,9 +205,10 @@ export default function Home() {
       </div>
 
       {/* Mode toggle */}
-      <div className="panel mt-8 inline-flex gap-1 p-1">
+      <div className="panel mt-8 inline-flex gap-1 p-1" role="group">
         <button
           onClick={() => setMode("advisor")}
+          aria-pressed={mode === "advisor"}
           className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
             mode === "advisor" ? "accent-gradient text-white shadow-sm" : "text-muted hover:text-foreground"
           }`}
@@ -208,6 +217,7 @@ export default function Home() {
         </button>
         <button
           onClick={() => setMode("search")}
+          aria-pressed={mode === "search"}
           className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
             mode === "search" ? "accent-gradient text-white shadow-sm" : "text-muted hover:text-foreground"
           }`}
@@ -228,11 +238,14 @@ export default function Home() {
                 <button
                   key={c}
                   onClick={() => changeCategory(c)}
+                  aria-pressed={c === category}
                   className={`panel flex flex-col items-center gap-1 px-2 py-3 text-xs font-medium transition-all hover:-translate-y-0.5 ${
                     c === category ? "ring-2 ring-[var(--accent-solid)]" : ""
                   }`}
                 >
-                  <span className="text-xl">{CATEGORY_ICON[c]}</span>
+                  <span className="text-xl" aria-hidden="true">
+                    {CATEGORY_ICON[c]}
+                  </span>
                   {bareItemName(c, locale)}
                 </button>
               ))}
@@ -240,10 +253,11 @@ export default function Home() {
 
             {materialOptions.length > 0 && (
               <div className="mt-3">
-                <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+                <label htmlFor="material-select" className="text-xs font-semibold uppercase tracking-wide text-muted">
                   {t("step1Material", locale)}
                 </label>
                 <select
+                  id="material-select"
                   value={material}
                   onChange={(ev) => setMaterial(ev.target.value as Material)}
                   className="mt-1.5 block w-full rounded-md border border-[var(--surface-border)] bg-[var(--surface-raised)] px-2 py-1.5 text-sm sm:w-auto"
@@ -264,12 +278,13 @@ export default function Home() {
             <div className="panel mt-3 divide-y divide-[var(--surface-border)]">
               {applicable.map((e) => (
                 <div key={e.id} className="flex items-center justify-between gap-4 px-4 py-2.5">
-                  <span className="flex items-center gap-2 text-sm">
+                  <label htmlFor={`current-${e.id}`} className="flex items-center gap-2 text-sm">
                     <RarityDot weight={e.weight} locale={locale} />
                     {enchantmentName(e.id, locale)}
                     {e.treasureOnly && <span className="text-xs text-muted">{t("treasureTag", locale)}</span>}
-                  </span>
+                  </label>
                   <select
+                    id={`current-${e.id}`}
                     value={current[e.id] ?? 0}
                     onChange={(ev) => setLevel(e.id, Number(ev.target.value))}
                     className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-raised)] px-2 py-1 text-sm"
@@ -294,6 +309,7 @@ export default function Home() {
                 <button
                   key={g.id}
                   onClick={() => setGoalId(g.id)}
+                  aria-pressed={g.id === goal.id}
                   className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
                     g.id === goal.id
                       ? "accent-gradient text-white shadow-sm"

@@ -273,11 +273,23 @@ no-accounts design).
     `vitest` is a devDependency only (`npm run test`), zero bytes shipped
     to users; bumped `@types/node` to `^24` alongside it since Vitest 5
     requires it and the project already runs on Node 24.
-14. **Accessibility pass** — add `aria-label`s where a control's accessible
-    name isn't already obvious from visible text (icon-only buttons,
-    decorative rarity dots), and do a quick contrast/keyboard-navigation
-    check. Currently there isn't a single `aria-*`/`role` attribute
-    anywhere in the app.
+14. ~~Accessibility pass~~ — done: every `<select>` now has a properly
+    linked `<label htmlFor>` instead of just sitting visually next to one;
+    every toggle-style button (locale, mode, item category, goal) exposes
+    `aria-pressed` for its selected state; the rarity dot in the
+    advisor's lists gets `role="img"`/`aria-label` since it's the only
+    place that info appears there (SearchMode's copy of the same dot gets
+    `aria-hidden` instead, since it already sits next to visible rarity
+    text); decorative emoji (rank medals, source icons) are
+    `aria-hidden`; the "report a bug" external link gets a visually-hidden
+    "(opens in a new tab)" hint; and `CopyLinkButton` is `aria-live` so
+    the "copied" confirmation is announced, not just shown. All native
+    `<button>`/`<select>` elements, so keyboard navigation (Tab/Enter/
+    Space/arrow keys) already worked with no custom widget code needed.
+    Color-contrast wasn't independently re-verified (no connected browser
+    tool this session to measure it) — the existing palette was already
+    designed with light/dark contrast in mind (see globals.css), so this
+    is a lower-confidence claim than the rest of this item.
 15. **Offline banner** — the PWA service worker (item 10) already caches
     everything for genuine offline use, but nothing tells the user they're
     offline and looking at a cached copy. A small `navigator.onLine`-driven

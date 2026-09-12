@@ -13,7 +13,7 @@ export default function Footer({ locale }: { locale: Locale }) {
       </p>
       <div className="mt-3">
         <a href={GITHUB_ISSUES_URL} target="_blank" rel="noreferrer" className="hover:text-foreground">
-          {t("footerReportLink", locale)}
+          {t("footerReportLink", locale)} <span className="sr-only">{t("opensInNewTab", locale)}</span>
         </a>
       </div>
       <p className="mt-3">

@@ -111,6 +111,7 @@ const UI = {
   shareCopied: { en: "✓ Link copied!", fr: "✓ Lien copié !" },
 
   footerReportLink: { en: "🐙 Report a bug / suggest an improvement", fr: "🐙 Signaler un bug / suggérer une amélioration" },
+  opensInNewTab: { en: "(opens in a new tab)", fr: "(ouvre un nouvel onglet)" },
   footerRights: {
     en: "— source visible for transparency, all rights reserved.",
     fr: "— code source visible à titre informatif, tous droits réservés.",

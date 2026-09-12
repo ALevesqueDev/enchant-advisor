@@ -27,6 +27,10 @@ export default function CopyLinkButton({ locale }: { locale: Locale }) {
   return (
     <button
       onClick={copyLink}
+      // aria-live announces the "copied" confirmation to screen readers
+      // without needing focus to move — otherwise the only feedback is the
+      // visible text swap, which a screen reader user wouldn't get at all.
+      aria-live="polite"
       className="panel rounded-full px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:text-foreground"
     >
       {copied ? t("shareCopied", locale) : t("shareCopyLink", locale)}

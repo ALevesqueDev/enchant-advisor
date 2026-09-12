@@ -201,9 +201,17 @@ on which of these you actually want first.
    already provably costs the same as the more obvious-looking balanced
    binary tree (see the proof in `anvil.ts`), so there was no cheaper
    structure being left on the table by skipping that interleaving.
-7. **Shareable builds** — serialize the current item/enchants/goal (or
-   search) selection into the URL query string so a link can be shared
-   without needing any backend/accounts.
+7. ~~Shareable builds~~ — done: `src/lib/shareLink.ts` encodes the whole
+   selection (mode, locale, and either the advisor's item/material/goal/
+   current-enchants or search mode's enchant/level/item/Luck-of-the-Sea)
+   into short query-string keys (`m`, `l`, `it`, `mt`, `g`, `h`, `e`, `lv`,
+   `c`, `lk`), kept in sync live via `history.replaceState()` (no
+   navigation, no reload, no history spam per keystroke) so the address bar
+   is always a paste-able link — plus an explicit "Copy link" button next to
+   the locale toggle for anyone who'd rather not trust that. On load, the
+   URL is read once and every field is validated against real categories/
+   materials/goals/enchantment ids before being applied; anything missing
+   or stale just falls back to the normal defaults instead of crashing.
 8. **Bookshelf-count helper** — let the user pick "0-15 bookshelves"
    instead of typing the displayed level directly, matching what they
    actually see at their own table.

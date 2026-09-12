@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { ITEM_CATEGORY_LABELS, enchantmentById, enchantmentsFor } from "@/lib/enchantments";
 import { GOALS } from "@/lib/goals";
 import { recommend, untouchedCurrentEnchants } from "@/lib/recommend";
@@ -9,10 +9,12 @@ import { CATEGORY_ICON, rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/
 import { enchantmentName, itemName, bareItemName, LOCALE_LABELS, type Locale } from "@/lib/i18n";
 import { materialsFor, type Material } from "@/lib/materials";
 import { t, blockedByNote, levelTargetNote } from "@/lib/strings";
+import { encodeHave, readShareParams, patchShareParams } from "@/lib/shareLink";
 import { useLocale } from "./LocaleContext";
 import type { EnchantSet, ItemCategory } from "@/lib/types";
 import SearchMode from "./SearchMode";
 import Footer from "./Footer";
+import CopyLinkButton from "./CopyLinkButton";
 
 const CATEGORIES = Object.keys(ITEM_CATEGORY_LABELS) as ItemCategory[];
 
@@ -71,6 +73,68 @@ export default function Home() {
   const [current, setCurrent] = useState<EnchantSet>({});
   const [goalId, setGoalId] = useState<string>(GOALS["pickaxe"][0].id);
 
+  useEffect(() => {
+    // One-time hydration from a shared link, same pattern as
+    // LocaleContext's localStorage read: SSR/first render always uses the
+    // plain defaults above (there's no request-time way to read the URL a
+    // static export was pre-rendered for), then this corrects them
+    // client-side once window.location is reachable. Every field is
+    // validated against real categories/materials/goals/enchantments before
+    // being applied — a stale or hand-edited URL just falls back to the
+    // defaults above instead of crashing or showing garbage.
+    const decoded = readShareParams(new URLSearchParams(window.location.search));
+
+    if (decoded.mode) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMode(decoded.mode);
+    }
+    if (decoded.locale && decoded.locale !== locale) setLocale(decoded.locale);
+
+    const a = decoded.advisor;
+    if (a?.category && CATEGORIES.includes(a.category)) {
+      const cat = a.category;
+      setCategory(cat);
+
+      const materials = materialsFor(cat);
+      const mat = a.material && materials.includes(a.material) ? a.material : defaultMaterialFor(cat);
+      setMaterial(mat);
+
+      const goalsForCat = GOALS[cat];
+      const gId = a.goalId && goalsForCat.some((g) => g.id === a.goalId) ? a.goalId : goalsForCat[0].id;
+      setGoalId(gId);
+
+      if (a.current) {
+        const validIds = new Set(enchantmentsFor(cat).map((e) => e.id));
+        const filtered: EnchantSet = {};
+        for (const [id, level] of Object.entries(a.current)) {
+          if (validIds.has(id) && level >= 1 && level <= enchantmentById(id).maxLevel) filtered[id] = level;
+        }
+        setCurrent(filtered);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keeps the URL's query string in sync with the advisor's live selection
+  // (mode + locale always; the item/material/goal/current-enchants only
+  // while advisor mode is actually showing) so the address bar is always a
+  // shareable link — see shareLink.ts's header for why this is a plain
+  // history.replaceState() rather than routing.
+  useEffect(() => {
+    if (mode !== "advisor") {
+      patchShareParams({ m: "s", l: locale });
+      return;
+    }
+    patchShareParams({
+      m: "a",
+      l: locale,
+      it: category,
+      mt: material ?? null,
+      g: goalId,
+      h: encodeHave(current) || null,
+    });
+  }, [mode, locale, category, material, goalId, current]);
+
   const applicable = useMemo(() => enchantmentsFor(category), [category]);
   const goals = GOALS[category];
   const goal = goals.find((g) => g.id === goalId) ?? goals[0];
@@ -126,7 +190,8 @@ export default function Home() {
           <h1 className="font-display accent-text mt-4 text-4xl font-bold sm:text-5xl">Enchant Advisor</h1>
           <p className="mt-2 max-w-xl text-sm text-muted sm:text-base">{t("heroTagline", locale)}</p>
         </div>
-        <div className="flex justify-center sm:justify-end">
+        <div className="flex justify-center gap-2 sm:justify-end">
+          <CopyLinkButton locale={locale} />
           <LocaleToggle locale={locale} setLocale={setLocale} />
         </div>
       </div>

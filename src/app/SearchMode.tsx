@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ENCHANTMENTS, enchantmentById } from "@/lib/enchantments";
 import { materialsFor, enchantability, type Material } from "@/lib/materials";
 import { findBestTableOdds, findBestBookOdds, type BestTableCombo, type BestBookLevel } from "@/lib/tableOdds";
@@ -8,6 +8,7 @@ import { treasureOdds, treasureSourceNote, isStructureLootOnly, type TreasureOdd
 import { rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
 import { enchantmentName, itemName, bareItemName } from "@/lib/i18n";
 import { t } from "@/lib/strings";
+import { readShareParams, patchShareParams } from "@/lib/shareLink";
 import { useLocale } from "./LocaleContext";
 import type { ItemCategory } from "@/lib/types";
 
@@ -41,6 +42,37 @@ export default function SearchMode() {
 
   const [results, setResults] = useState<Results | null>(null);
   const [calculating, setCalculating] = useState(false);
+
+  useEffect(() => {
+    // One-time hydration from a shared link — this component only exists
+    // while search mode is showing (page.tsx conditionally renders it), so
+    // "on mount" already means "just switched into this mode", no extra
+    // guard needed. See page.tsx's own hydration effect for the same
+    // pattern applied to advisor mode. Every field is validated against
+    // the real enchantment/category data before being applied.
+    const s = readShareParams(new URLSearchParams(window.location.search)).search;
+    if (!s) return;
+
+    const validEnchant = s.enchantId ? ENCHANTMENTS.find((e) => e.id === s.enchantId) : undefined;
+    if (validEnchant) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setEnchantId(validEnchant.id);
+      const lvl = s.level && s.level >= 1 && s.level <= validEnchant.maxLevel ? s.level : validEnchant.maxLevel;
+      setLevel(lvl);
+      const cat = s.category && validEnchant.categories.includes(s.category) ? s.category : validEnchant.categories[0];
+      setCategory(cat);
+    }
+    if (s.luckOfTheSea !== undefined && s.luckOfTheSea >= 0 && s.luckOfTheSea <= 3) {
+      setLuckOfTheSea(s.luckOfTheSea);
+    }
+  }, []);
+
+  // Keeps the URL's search-mode params in sync with the live selection —
+  // namespaced (e/lv/c/lk) so they coexist with the advisor's own params
+  // (it/mt/g/h) written by page.tsx without clobbering each other.
+  useEffect(() => {
+    patchShareParams({ e: enchantId, lv: String(level), c: category, lk: luckOfTheSea > 0 ? String(luckOfTheSea) : null });
+  }, [enchantId, level, category, luckOfTheSea]);
 
   const structureOnly = isStructureLootOnly(enchantId);
 

@@ -98,6 +98,9 @@ const UI = {
     en: "Enchantments occasionally change between versions; report anything that looks off.",
     fr: "Les enchantements changent parfois d'une version à l'autre ; signale un écart si tu en vois un.",
   },
+  shareCopyLink: { en: "🔗 Copy link", fr: "🔗 Copier le lien" },
+  shareCopied: { en: "✓ Link copied!", fr: "✓ Lien copié !" },
+
   footerReportLink: { en: "🐙 Report a bug / suggest an improvement", fr: "🐙 Signaler un bug / suggérer une amélioration" },
   footerRights: {
     en: "— source visible for transparency, all rights reserved.",

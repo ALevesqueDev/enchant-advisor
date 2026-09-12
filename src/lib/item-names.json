@@ -1,0 +1,334 @@
+{
+  "axe": {
+    "copper": {
+      "en": "Copper Axe",
+      "fr": "Hache en cuivre"
+    },
+    "diamond": {
+      "en": "Diamond Axe",
+      "fr": "Hache en diamant"
+    },
+    "golden": {
+      "en": "Golden Axe",
+      "fr": "Hache en or"
+    },
+    "iron": {
+      "en": "Iron Axe",
+      "fr": "Hache en fer"
+    },
+    "netherite": {
+      "en": "Netherite Axe",
+      "fr": "Hache en Netherite"
+    },
+    "stone": {
+      "en": "Stone Axe",
+      "fr": "Hache en pierre"
+    },
+    "wood": {
+      "en": "Wooden Axe",
+      "fr": "Hache en bois"
+    }
+  },
+  "boots": {
+    "chainmail": {
+      "en": "Chainmail Boots",
+      "fr": "Bottes de mailles"
+    },
+    "copper": {
+      "en": "Copper Boots",
+      "fr": "Bottes en cuivre"
+    },
+    "diamond": {
+      "en": "Diamond Boots",
+      "fr": "Bottes en diamant"
+    },
+    "golden": {
+      "en": "Golden Boots",
+      "fr": "Bottes en or"
+    },
+    "iron": {
+      "en": "Iron Boots",
+      "fr": "Bottes en fer"
+    },
+    "leather": {
+      "en": "Leather Boots",
+      "fr": "Bottes en cuir"
+    },
+    "netherite": {
+      "en": "Netherite Boots",
+      "fr": "Bottes en Netherite"
+    }
+  },
+  "bow": {
+    "en": "Bow",
+    "fr": "Arc"
+  },
+  "chestplate": {
+    "chainmail": {
+      "en": "Chainmail Chestplate",
+      "fr": "Cotte de mailles"
+    },
+    "copper": {
+      "en": "Copper Chestplate",
+      "fr": "Plastron en cuivre"
+    },
+    "diamond": {
+      "en": "Diamond Chestplate",
+      "fr": "Plastron en diamant"
+    },
+    "golden": {
+      "en": "Golden Chestplate",
+      "fr": "Plastron en or"
+    },
+    "iron": {
+      "en": "Iron Chestplate",
+      "fr": "Plastron en fer"
+    },
+    "leather": {
+      "en": "Leather Tunic",
+      "fr": "Tunique en cuir"
+    },
+    "netherite": {
+      "en": "Netherite Chestplate",
+      "fr": "Plastron en Netherite"
+    }
+  },
+  "crossbow": {
+    "en": "Crossbow",
+    "fr": "Arbalète"
+  },
+  "elytra": {
+    "en": "Elytra",
+    "fr": "Élytres"
+  },
+  "fishing_rod": {
+    "en": "Fishing Rod",
+    "fr": "Canne à pêche"
+  },
+  "helmet": {
+    "chainmail": {
+      "en": "Chainmail Helmet",
+      "fr": "Casque de mailles"
+    },
+    "copper": {
+      "en": "Copper Helmet",
+      "fr": "Casque en cuivre"
+    },
+    "diamond": {
+      "en": "Diamond Helmet",
+      "fr": "Casque en diamant"
+    },
+    "golden": {
+      "en": "Golden Helmet",
+      "fr": "Casque en or"
+    },
+    "iron": {
+      "en": "Iron Helmet",
+      "fr": "Casque en fer"
+    },
+    "leather": {
+      "en": "Leather Cap",
+      "fr": "Chapeau en cuir"
+    },
+    "netherite": {
+      "en": "Netherite Helmet",
+      "fr": "Casque en Netherite"
+    },
+    "turtle_shell": {
+      "en": "Turtle Shell",
+      "fr": "Carapace de tortue"
+    }
+  },
+  "hoe": {
+    "copper": {
+      "en": "Copper Hoe",
+      "fr": "Houe en cuivre"
+    },
+    "diamond": {
+      "en": "Diamond Hoe",
+      "fr": "Houe en diamant"
+    },
+    "golden": {
+      "en": "Golden Hoe",
+      "fr": "Houe en or"
+    },
+    "iron": {
+      "en": "Iron Hoe",
+      "fr": "Houe en fer"
+    },
+    "netherite": {
+      "en": "Netherite Hoe",
+      "fr": "Houe en Netherite"
+    },
+    "stone": {
+      "en": "Stone Hoe",
+      "fr": "Houe en pierre"
+    },
+    "wood": {
+      "en": "Wooden Hoe",
+      "fr": "Houe en bois"
+    }
+  },
+  "leggings": {
+    "chainmail": {
+      "en": "Chainmail Leggings",
+      "fr": "Jambières de mailles"
+    },
+    "copper": {
+      "en": "Copper Leggings",
+      "fr": "Jambières en cuivre"
+    },
+    "diamond": {
+      "en": "Diamond Leggings",
+      "fr": "Jambières en diamant"
+    },
+    "golden": {
+      "en": "Golden Leggings",
+      "fr": "Jambières en or"
+    },
+    "iron": {
+      "en": "Iron Leggings",
+      "fr": "Jambières en fer"
+    },
+    "leather": {
+      "en": "Leather Pants",
+      "fr": "Pantalon en cuir"
+    },
+    "netherite": {
+      "en": "Netherite Leggings",
+      "fr": "Jambières en Netherite"
+    }
+  },
+  "mace": {
+    "en": "Mace",
+    "fr": "Masse"
+  },
+  "pickaxe": {
+    "copper": {
+      "en": "Copper Pickaxe",
+      "fr": "Pioche en cuivre"
+    },
+    "diamond": {
+      "en": "Diamond Pickaxe",
+      "fr": "Pioche en diamant"
+    },
+    "golden": {
+      "en": "Golden Pickaxe",
+      "fr": "Pioche en or"
+    },
+    "iron": {
+      "en": "Iron Pickaxe",
+      "fr": "Pioche en fer"
+    },
+    "netherite": {
+      "en": "Netherite Pickaxe",
+      "fr": "Pioche en Netherite"
+    },
+    "stone": {
+      "en": "Stone Pickaxe",
+      "fr": "Pioche en pierre"
+    },
+    "wood": {
+      "en": "Wooden Pickaxe",
+      "fr": "Pioche en bois"
+    }
+  },
+  "shield": {
+    "en": "Shield",
+    "fr": "Bouclier"
+  },
+  "shovel": {
+    "copper": {
+      "en": "Copper Shovel",
+      "fr": "Pelle en cuivre"
+    },
+    "diamond": {
+      "en": "Diamond Shovel",
+      "fr": "Pelle en diamant"
+    },
+    "golden": {
+      "en": "Golden Shovel",
+      "fr": "Pelle en or"
+    },
+    "iron": {
+      "en": "Iron Shovel",
+      "fr": "Pelle en fer"
+    },
+    "netherite": {
+      "en": "Netherite Shovel",
+      "fr": "Pelle en Netherite"
+    },
+    "stone": {
+      "en": "Stone Shovel",
+      "fr": "Pelle en pierre"
+    },
+    "wood": {
+      "en": "Wooden Shovel",
+      "fr": "Pelle en bois"
+    }
+  },
+  "spear": {
+    "copper": {
+      "en": "Copper Spear",
+      "fr": "Lance en cuivre"
+    },
+    "diamond": {
+      "en": "Diamond Spear",
+      "fr": "Lance en diamant"
+    },
+    "golden": {
+      "en": "Golden Spear",
+      "fr": "Lance en or"
+    },
+    "iron": {
+      "en": "Iron Spear",
+      "fr": "Lance en fer"
+    },
+    "netherite": {
+      "en": "Netherite Spear",
+      "fr": "Lance en Netherite"
+    },
+    "stone": {
+      "en": "Stone Spear",
+      "fr": "Lance en pierre"
+    },
+    "wood": {
+      "en": "Wooden Spear",
+      "fr": "Lance en bois"
+    }
+  },
+  "sword": {
+    "copper": {
+      "en": "Copper Sword",
+      "fr": "Épée en cuivre"
+    },
+    "diamond": {
+      "en": "Diamond Sword",
+      "fr": "Épée en diamant"
+    },
+    "golden": {
+      "en": "Golden Sword",
+      "fr": "Épée en or"
+    },
+    "iron": {
+      "en": "Iron Sword",
+      "fr": "Épée en fer"
+    },
+    "netherite": {
+      "en": "Netherite Sword",
+      "fr": "Épée en Netherite"
+    },
+    "stone": {
+      "en": "Stone Sword",
+      "fr": "Épée en pierre"
+    },
+    "wood": {
+      "en": "Wooden Sword",
+      "fr": "Épée en bois"
+    }
+  },
+  "trident": {
+    "en": "Trident",
+    "fr": "Trident"
+  }
+}

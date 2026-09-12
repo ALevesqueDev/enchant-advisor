@@ -6,6 +6,8 @@ import { GOALS } from "@/lib/goals";
 import { recommend, untouchedCurrentEnchants } from "@/lib/recommend";
 import { planAnvilCombines } from "@/lib/anvil";
 import { CATEGORY_ICON, RARITY_LABELS, RARITY_VAR, rarityFromWeight } from "@/lib/presentation";
+import { enchantmentName, representativeItemName, LOCALE_LABELS, type Locale } from "@/lib/i18n";
+import { useLocale } from "./LocaleContext";
 import type { EnchantSet, ItemCategory } from "@/lib/types";
 import SearchMode from "./SearchMode";
 import Footer from "./Footer";
@@ -37,6 +39,24 @@ function SectionLabel({ index, children }: { index: string; children: React.Reac
   );
 }
 
+function LocaleToggle({ locale, setLocale }: { locale: Locale; setLocale: (l: Locale) => void }) {
+  return (
+    <div className="panel inline-flex gap-1 p-1">
+      {(Object.keys(LOCALE_LABELS) as Locale[]).map((l) => (
+        <button
+          key={l}
+          onClick={() => setLocale(l)}
+          className={`rounded-md px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-all ${
+            l === locale ? "accent-gradient text-white" : "text-muted hover:text-foreground"
+          }`}
+        >
+          {l}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function RarityDot({ weight }: { weight: number }) {
   const rarity = rarityFromWeight(weight);
   return (
@@ -49,6 +69,7 @@ function RarityDot({ weight }: { weight: number }) {
 }
 
 export default function Home() {
+  const { locale, setLocale } = useLocale();
   const [mode, setMode] = useState<"advisor" | "search">("advisor");
   const [category, setCategory] = useState<ItemCategory>("pickaxe");
   const [current, setCurrent] = useState<EnchantSet>({});
@@ -84,15 +105,20 @@ export default function Home() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       {/* Hero */}
-      <div className="text-center sm:text-left">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--surface-border)] bg-[var(--surface)] px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-muted">
-          ✦ Minecraft Java Edition
-        </span>
-        <h1 className="font-display accent-text mt-4 text-4xl font-bold sm:text-5xl">Enchant Advisor</h1>
-        <p className="mt-2 max-w-xl text-sm text-muted sm:text-base">
-          Ton objet, ce qui est déjà enchanté dessus, et ton objectif — on te dit quoi ajouter, et ce que ça va
-          coûter à l&apos;enclume.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="text-center sm:text-left">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--surface-border)] bg-[var(--surface)] px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-muted">
+            ✦ Minecraft Java Edition
+          </span>
+          <h1 className="font-display accent-text mt-4 text-4xl font-bold sm:text-5xl">Enchant Advisor</h1>
+          <p className="mt-2 max-w-xl text-sm text-muted sm:text-base">
+            Ton objet, ce qui est déjà enchanté dessus, et ton objectif — on te dit quoi ajouter, et ce que ça va
+            coûter à l&apos;enclume.
+          </p>
+        </div>
+        <div className="flex justify-center sm:justify-end">
+          <LocaleToggle locale={locale} setLocale={setLocale} />
+        </div>
       </div>
 
       {/* Mode toggle */}
@@ -132,7 +158,7 @@ export default function Home() {
                   }`}
                 >
                   <span className="text-xl">{CATEGORY_ICON[c]}</span>
-                  {ITEM_CATEGORY_LABELS[c]}
+                  {representativeItemName(c, locale)}
                 </button>
               ))}
             </div>
@@ -146,7 +172,7 @@ export default function Home() {
                 <div key={e.id} className="flex items-center justify-between gap-4 px-4 py-2.5">
                   <span className="flex items-center gap-2 text-sm">
                     <RarityDot weight={e.weight} />
-                    {e.name}
+                    {enchantmentName(e.id, locale)}
                     {e.treasureOnly && <span className="text-xs text-muted">(trésor)</span>}
                   </span>
                   <select
@@ -197,10 +223,10 @@ export default function Home() {
                     <div className="flex items-center gap-2">
                       <RarityDot weight={e.weight} />
                       <div>
-                        <div className="text-sm font-medium">{e.name}</div>
+                        <div className="text-sm font-medium">{enchantmentName(e.id, locale)}</div>
                         <div className="text-xs text-muted">
                           {r.status === "conflict"
-                            ? `Bloqué par ${enchantmentById(r.conflictsWith!).name} déjà sur l'objet`
+                            ? `Bloqué par ${enchantmentName(r.conflictsWith!, locale)} déjà sur l'objet`
                             : `${r.currentLevel > 0 ? `Niveau ${r.currentLevel} → ` : ""}Niveau ${r.targetLevel} visé`}
                         </div>
                       </div>
@@ -214,7 +240,7 @@ export default function Home() {
             </div>
             {untouched.length > 0 && (
               <p className="mt-2 text-xs text-muted">
-                Conservés sans impact sur cet objectif : {untouched.map((id) => enchantmentById(id).name).join(", ")}.
+                Conservés sans impact sur cet objectif : {untouched.map((id) => enchantmentName(id, locale)).join(", ")}.
               </p>
             )}
           </section>
@@ -244,7 +270,7 @@ export default function Home() {
                       <tr key={s.enchantId} className={s.tooExpensive ? "bg-[var(--status-conflict-bg)]" : undefined}>
                         <td className="px-4 py-2.5 text-muted">{i + 1}</td>
                         <td className="px-4 py-2.5">
-                          {enchantmentById(s.enchantId).name} {s.level}
+                          {enchantmentName(s.enchantId, locale)} {s.level}
                         </td>
                         <td className="px-4 py-2.5 text-right text-muted">{s.priorWorkPenalty}</td>
                         <td className="px-4 py-2.5 text-right">

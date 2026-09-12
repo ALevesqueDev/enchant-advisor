@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { ENCHANTMENTS, ITEM_CATEGORY_LABELS, enchantmentById } from "@/lib/enchantments";
-import { materialsFor, enchantability, MATERIAL_LABELS, type Material } from "@/lib/materials";
+import { useMemo, useState } from "react";
+import { ENCHANTMENTS, enchantmentById } from "@/lib/enchantments";
+import { materialsFor, enchantability, type Material } from "@/lib/materials";
 import { findBestTableOdds, type BestTableCombo } from "@/lib/tableOdds";
 import { treasureOdds, type TreasureOddsResult } from "@/lib/treasure";
 import { RARITY_LABELS, RARITY_VAR, rarityFromWeight } from "@/lib/presentation";
+import { enchantmentName, itemName, representativeItemName } from "@/lib/i18n";
+import { useLocale } from "./LocaleContext";
 import type { ItemCategory } from "@/lib/types";
 
-const SORTED_ENCHANTMENTS = [...ENCHANTMENTS].sort((a, b) => a.name.localeCompare(b.name));
 const RANK_MEDAL = ["🥇", "🥈", "🥉"];
 
 const SOURCE_ICON: Record<TreasureOddsResult["source"], string> = {
@@ -24,7 +25,13 @@ const SOURCE_LABEL: Record<TreasureOddsResult["source"], string> = {
 };
 
 export default function SearchMode() {
-  const [enchantId, setEnchantId] = useState(SORTED_ENCHANTMENTS[0].id);
+  const { locale } = useLocale();
+  const sortedEnchantments = useMemo(
+    () => [...ENCHANTMENTS].sort((a, b) => enchantmentName(a.id, locale).localeCompare(enchantmentName(b.id, locale))),
+    [locale]
+  );
+
+  const [enchantId, setEnchantId] = useState(sortedEnchantments[0].id);
   const enchant = enchantmentById(enchantId);
   const rarity = rarityFromWeight(enchant.weight);
   const [level, setLevel] = useState(enchant.maxLevel);
@@ -78,9 +85,9 @@ export default function SearchMode() {
             onChange={(e) => changeEnchant(e.target.value)}
             className="w-full rounded-md border border-[var(--surface-border)] bg-[var(--surface-raised)] px-2 py-2 text-sm"
           >
-            {SORTED_ENCHANTMENTS.map((e) => (
+            {sortedEnchantments.map((e) => (
               <option key={e.id} value={e.id}>
-                {e.name} {e.treasureOnly ? "(trésor)" : ""}
+                {enchantmentName(e.id, locale)} {e.treasureOnly ? "(trésor)" : ""}
               </option>
             ))}
           </select>
@@ -114,7 +121,7 @@ export default function SearchMode() {
             >
               {enchant.categories.map((c) => (
                 <option key={c} value={c}>
-                  {ITEM_CATEGORY_LABELS[c]}
+                  {representativeItemName(c, locale)}
                 </option>
               ))}
             </select>
@@ -151,15 +158,15 @@ export default function SearchMode() {
 
       {enchant.treasureOnly && (
         <p className="mt-3 text-xs text-muted">
-          {enchant.name} ne peut jamais sortir de la table d&apos;enchantement — c&apos;est un enchantement trésor.
-          Aucun objet, matériau ou niveau n&apos;y change quoi que ce soit.
+          {enchantmentName(enchantId, locale)} ne peut jamais sortir de la table d&apos;enchantement — c&apos;est un
+          enchantement trésor. Aucun objet, matériau ou niveau n&apos;y change quoi que ce soit.
         </p>
       )}
 
       {tableResults && (
         <section className="mt-6">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Meilleures combinaisons — {ITEM_CATEGORY_LABELS[category]}
+            Meilleures combinaisons — {representativeItemName(category, locale)}
           </h3>
           <div className="mt-3 space-y-2">
             {tableResults.slice(0, 8).map((r, i) => (
@@ -171,7 +178,7 @@ export default function SearchMode() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="truncate text-sm font-medium">
-                      {MATERIAL_LABELS[r.material as Material] ?? r.material} · Niveau {r.level}
+                      {itemName(category, r.material as Material, locale)} · Niveau {r.level}
                     </span>
                     <span className="font-display shrink-0 text-sm font-bold accent-text">
                       {(r.probability * 100).toFixed(1)}%

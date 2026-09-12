@@ -127,34 +127,58 @@ To bump the pin by hand: update `src/lib/game-version.json`, then run
 `npm run check-version` against the new version and apply what it reports to
 `enchantment-data.json` / `enchantments.ts` / `materials.ts`.
 
+## Localization
+
+Item and enchantment names are the REAL names Minecraft itself uses in each
+language — extracted from the game's own `en_us.json`/`fr_fr.json` at our
+pinned version (`src/lib/enchantment-names.json`, `src/lib/item-names.json`),
+not a machine translation. A locale toggle (`src/app/LocaleContext.tsx`,
+persisted to localStorage) switches every item/enchantment name shown; the
+app's own UI chrome (buttons, section headers, goal descriptions) stays
+French-only for now — that's a deliberate scope line, not an oversight, since
+those aren't official game strings and translating them well is a separate
+piece of work. Re-extract both name files whenever `game-version.json` bumps,
+same source, tag `<version>-assets`.
+
+The "category" concept (e.g. "pickaxe" without a material) isn't a real
+Minecraft concept — every real name is material-specific. Where a
+material-agnostic label is needed (the advisor's item picker), Diamond
+stands in as the representative tier ("Diamond Pickaxe" / "Pioche en
+diamant"); the search mode's ranked results show the item's actual matched
+material instead.
+
 ## Roadmap
 
 Roughly in order — later items depend on earlier ones less than they depend
 on which of these you actually want first.
 
 1. ~~Data-freshness check script~~ — done, see Version pinning above.
-2. **Book-enchanting mode** — both the anvil calculator and the table-odds
+2. ~~Bilingual item/enchantment names~~ — done, see Localization above.
+3. **Full UI localization** — the app's own copy (buttons, section headers,
+   goal names) is still French-only regardless of the name-locale toggle;
+   worth doing once the phrasing has settled, so it isn't re-translated
+   every time UI text changes.
+4. **Book-enchanting mode** — both the anvil calculator and the table-odds
    simulator currently model enchanting the item directly. Enchanting a
    book first (then anvil-transferring it) is a very common real strategy
    and has slightly different rules (the "-1 enchantment" quirk for books —
    see `tableOdds.ts`).
-3. **Full anvil optimizer** — model pre-combining two low-level books into
+5. **Full anvil optimizer** — model pre-combining two low-level books into
    a higher-level one before it ever touches the final item, which is where
    combine *order* actually starts to affect total cost (today's calculator
    correctly says order doesn't matter, but only because it doesn't model
    this cheaper path).
-4. **Shareable builds** — serialize the current item/enchants/goal (or
+6. **Shareable builds** — serialize the current item/enchants/goal (or
    search) selection into the URL query string so a link can be shared
    without needing any backend/accounts.
-5. **Bookshelf-count helper** — let the user pick "0-15 bookshelves"
+7. **Bookshelf-count helper** — let the user pick "0-15 bookshelves"
    instead of typing the displayed level directly, matching what they
    actually see at their own table.
-6. **Mobile QA pass** — one real click-blocking bug already surfaced
+8. **Mobile QA pass** — one real click-blocking bug already surfaced
    (`.glint::after` missing `pointer-events: none`) from the visual
    redesign; worth a dedicated pass across both modes on a real phone.
-7. **PWA support** — add a manifest + service worker so it can be
+9. **PWA support** — add a manifest + service worker so it can be
    "installed" to a phone home screen. Purely cosmetic (it's still a web
    app under the hood) but closes the "is this an app?" question for good.
-8. **Public repo + license**, if bug reports from outside testers matter —
-   right now the GitHub issues link in the footer 404s for anyone who
-   isn't a collaborator on the private repo.
+10. ~~Public repo + license~~ — done: the repo is public, all rights
+    reserved (see LICENSE), and the footer's GitHub Issues link works.

@@ -1,0 +1,174 @@
+{
+  "aqua_affinity": {
+    "en": "Aqua Affinity",
+    "fr": "Affinité aquatique"
+  },
+  "bane_of_arthropods": {
+    "en": "Bane of Arthropods",
+    "fr": "Fléau des arthropodes"
+  },
+  "binding_curse": {
+    "en": "Curse of Binding",
+    "fr": "Malédiction du lien éternel"
+  },
+  "blast_protection": {
+    "en": "Blast Protection",
+    "fr": "Protection contre les explosions"
+  },
+  "breach": {
+    "en": "Breach",
+    "fr": "Brèche"
+  },
+  "channeling": {
+    "en": "Channeling",
+    "fr": "Canalisation"
+  },
+  "density": {
+    "en": "Density",
+    "fr": "Densité"
+  },
+  "depth_strider": {
+    "en": "Depth Strider",
+    "fr": "Agilité aquatique"
+  },
+  "efficiency": {
+    "en": "Efficiency",
+    "fr": "Efficacité"
+  },
+  "feather_falling": {
+    "en": "Feather Falling",
+    "fr": "Chute amortie"
+  },
+  "fire_aspect": {
+    "en": "Fire Aspect",
+    "fr": "Aura de feu"
+  },
+  "fire_protection": {
+    "en": "Fire Protection",
+    "fr": "Protection contre le feu"
+  },
+  "flame": {
+    "en": "Flame",
+    "fr": "Flamme"
+  },
+  "fortune": {
+    "en": "Fortune",
+    "fr": "Fortune"
+  },
+  "frost_walker": {
+    "en": "Frost Walker",
+    "fr": "Semelles givrantes"
+  },
+  "impaling": {
+    "en": "Impaling",
+    "fr": "Empalement"
+  },
+  "infinity": {
+    "en": "Infinity",
+    "fr": "Infinité"
+  },
+  "knockback": {
+    "en": "Knockback",
+    "fr": "Recul"
+  },
+  "looting": {
+    "en": "Looting",
+    "fr": "Butin"
+  },
+  "loyalty": {
+    "en": "Loyalty",
+    "fr": "Loyauté"
+  },
+  "luck_of_the_sea": {
+    "en": "Luck of the Sea",
+    "fr": "Chance de la mer"
+  },
+  "lunge": {
+    "en": "Lunge",
+    "fr": "Élan"
+  },
+  "lure": {
+    "en": "Lure",
+    "fr": "Appât"
+  },
+  "mending": {
+    "en": "Mending",
+    "fr": "Raccommodage"
+  },
+  "multishot": {
+    "en": "Multishot",
+    "fr": "Tir multiple"
+  },
+  "piercing": {
+    "en": "Piercing",
+    "fr": "Perforation"
+  },
+  "power": {
+    "en": "Power",
+    "fr": "Puissance"
+  },
+  "projectile_protection": {
+    "en": "Projectile Protection",
+    "fr": "Protection contre les projectiles"
+  },
+  "protection": {
+    "en": "Protection",
+    "fr": "Protection"
+  },
+  "punch": {
+    "en": "Punch",
+    "fr": "Frappe"
+  },
+  "quick_charge": {
+    "en": "Quick Charge",
+    "fr": "Charge rapide"
+  },
+  "respiration": {
+    "en": "Respiration",
+    "fr": "Apnée"
+  },
+  "riptide": {
+    "en": "Riptide",
+    "fr": "Impulsion"
+  },
+  "sharpness": {
+    "en": "Sharpness",
+    "fr": "Tranchant"
+  },
+  "silk_touch": {
+    "en": "Silk Touch",
+    "fr": "Toucher de soie"
+  },
+  "smite": {
+    "en": "Smite",
+    "fr": "Châtiment"
+  },
+  "soul_speed": {
+    "en": "Soul Speed",
+    "fr": "Agilité des âmes"
+  },
+  "sweeping_edge": {
+    "en": "Sweeping Edge",
+    "fr": "Affilage"
+  },
+  "swift_sneak": {
+    "en": "Swift Sneak",
+    "fr": "Furtivité rapide"
+  },
+  "thorns": {
+    "en": "Thorns",
+    "fr": "Épines"
+  },
+  "unbreaking": {
+    "en": "Unbreaking",
+    "fr": "Solidité"
+  },
+  "vanishing_curse": {
+    "en": "Curse of Vanishing",
+    "fr": "Malédiction de disparition"
+  },
+  "wind_burst": {
+    "en": "Wind Burst",
+    "fr": "Rafale de vent"
+  }
+}

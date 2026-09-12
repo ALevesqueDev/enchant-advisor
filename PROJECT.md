@@ -302,6 +302,22 @@ no-accounts design).
     the static build's server-side prerender, so it defaults to "online"
     there and self-corrects immediately on mount in a real browser — same
     hydrate-after-mount pattern as `LocaleContext`'s localStorage read.
+
+    **Bug found and fixed 2026-09-12** (while testing an unrelated
+    discoverability change, via a curl check of the actual rendered
+    HTML): `typeof navigator === "undefined"` isn't enough to detect "not
+    a real browser". Node 21+ ships a partial global `navigator` object
+    (for Web-standard compatibility) whose `onLine` property is simply
+    `undefined` — not `false`, not absent. That made the original guard
+    (`someValue || false`-shaped) evaluate falsy during every
+    server-rendered page — the banner was incorrectly showing on first
+    paint on **every single page load**, in both `next dev` and the
+    static production build, until the client-side effect corrected it a
+    moment later. Never caught earlier because verification back then
+    only checked `npm run build`'s exit code and HTTP status, not the
+    actual rendered HTML content. Fixed by extracting the default-online
+    logic into `onlineStatus.ts`'s `isOnlineByDefault()` (`!== false`
+    instead of truthiness), now with 3 dedicated regression tests.
 16. ~~Pre-filled bug report link~~ — done: `Footer.tsx`'s "report a bug"
     link now pre-fills the GitHub issue body with the exact current page
     URL (which already encodes the whole selection via shareLink.ts),

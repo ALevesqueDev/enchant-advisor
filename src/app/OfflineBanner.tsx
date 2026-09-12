@@ -3,19 +3,21 @@
 import { useEffect, useState } from "react";
 import { t } from "@/lib/strings";
 import type { Locale } from "@/lib/i18n";
+import { isOnlineByDefault } from "./onlineStatus";
 
 /**
  * The service worker (public/sw.js, PWA support roadmap item) already
  * makes the app keep working with no connection by serving its cache —
  * this just tells the user that's what's happening, instead of leaving
  * them wondering why a "Calculate" they just ran might be using a stale
- * cached page. `navigator.onLine` isn't available during the static
- * build's server-side prerender, so this defaults to "online" there (same
- * hydrate-after-mount pattern as LocaleContext's localStorage read) and
- * corrects itself immediately once mounted in a real browser.
+ * cached page. `navigator.onLine` isn't reliably available during the
+ * static build's server-side prerender, so this defaults to "online"
+ * there (same hydrate-after-mount pattern as LocaleContext's localStorage
+ * read) and corrects itself immediately once mounted in a real browser —
+ * see onlineStatus.ts for a real bug this exact logic hit and its fix.
  */
 export default function OfflineBanner({ locale }: { locale: Locale }) {
-  const [online, setOnline] = useState(() => typeof navigator === "undefined" || navigator.onLine);
+  const [online, setOnline] = useState(() => typeof navigator === "undefined" || isOnlineByDefault(navigator.onLine));
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect

@@ -51,15 +51,29 @@ const ARMOR_ENCHANTABILITY: Partial<Record<Material, number>> = {
 const TOOL_LIKE: ItemCategory[] = ["pickaxe", "shovel", "hoe", "axe", "sword", "spear"];
 const ARMOR_LIKE: ItemCategory[] = ["helmet", "chestplate", "leggings", "boots"];
 
-/** Materials available for a given item category (only ones that exist in-game for it). */
+/**
+ * Weakest durability first, strongest last — pulled from each item's real
+ * `minecraft:max_damage` (verified against the pickaxe/helmet values, then
+ * cross-checked identical ordering on every other tool and armor piece).
+ * Two results worth flagging since they're not the "obvious" tier order:
+ * Gold has the LOWEST tool durability of all seven materials (32, below
+ * even Wood's 59) despite being a mid/late-game material, and Copper sits
+ * between Stone and Iron for tools but between Gold and Chainmail for
+ * armor — it isn't at the same relative position in both lists. Chainmail
+ * and Iron are an exact durability tie on every armor piece (e.g. 240 vs
+ * 240 for chestplate) — ordered Chainmail-then-Iron here since there's no
+ * durability basis to break the tie either way.
+ */
+const TOOL_DURABILITY_ORDER: Material[] = ["golden", "wood", "stone", "copper", "iron", "diamond", "netherite"];
+const ARMOR_DURABILITY_ORDER: Material[] = ["leather", "golden", "copper", "chainmail", "iron", "diamond", "netherite"];
+/** Turtle Shell is helmet-only; its durability (275) slots between Iron/Chainmail (165) and Diamond (363). */
+const HELMET_DURABILITY_ORDER: Material[] = ["leather", "golden", "copper", "chainmail", "iron", "turtle_shell", "diamond", "netherite"];
+
+/** Materials available for a given item category (only ones that exist in-game for it), weakest durability first. */
 export function materialsFor(category: ItemCategory): Material[] {
-  if (TOOL_LIKE.includes(category)) {
-    return ["wood", "stone", "iron", "golden", "diamond", "netherite", "copper"];
-  }
-  if (ARMOR_LIKE.includes(category)) {
-    const base: Material[] = ["leather", "chainmail", "iron", "golden", "diamond", "netherite", "copper"];
-    return category === "helmet" ? [...base, "turtle_shell"] : base;
-  }
+  if (TOOL_LIKE.includes(category)) return TOOL_DURABILITY_ORDER;
+  if (category === "helmet") return HELMET_DURABILITY_ORDER;
+  if (ARMOR_LIKE.includes(category)) return ARMOR_DURABILITY_ORDER;
   return []; // fixed-enchantability items (bow, crossbow, trident, fishing_rod, mace, shield, elytra)
 }
 

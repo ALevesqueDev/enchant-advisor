@@ -246,3 +246,41 @@ on which of these you actually want first.
     environment) rather than left as Next's default logo.
 11. ~~Public repo + license~~ — done: the repo is public, all rights
     reserved (see LICENSE), and the footer's GitHub Issues link works.
+
+With the original roadmap complete, the next batch is deliberately scoped
+to **reliability and UX polish only** — no new user-facing features, and
+nothing that adds real weight to the shipped bundle (a test runner is
+dev-only; everything else is a few lines of markup or a native browser
+API). Explicitly rejected for this batch as scope/weight creep: a
+manual dark-mode toggle, PDF/image export of a build, and any
+analytics/telemetry (conflicts with the app's stateless/no-backend/
+no-accounts design).
+
+12. **Crash safety net** — a React error boundary around the app so a
+    render-time exception (e.g. a corrupted/hand-edited share link that
+    slips past validation) shows a friendly "something broke, reload"
+    message instead of a blank white screen, plus a `<noscript>` fallback
+    for the (rare, since this is a fully client-rendered app) case of JS
+    failing to load at all.
+13. **Lightweight test suite (Vitest) for the pure logic** — `recommend.ts`,
+    `anvil.ts` (including the build-up cost formula and its
+    order-invariance proof), the bookshelf formula in `tableOdds.ts`, and
+    `shareLink.ts`'s encode/decode round-trip. All of this was verified by
+    hand during development (manual calculations, throwaway scripts) —
+    locking it down with real tests means the next change that breaks one
+    of these formulas gets caught immediately instead of silently.
+    Dev-only dependency, zero bytes shipped to users.
+14. **Accessibility pass** — add `aria-label`s where a control's accessible
+    name isn't already obvious from visible text (icon-only buttons,
+    decorative rarity dots), and do a quick contrast/keyboard-navigation
+    check. Currently there isn't a single `aria-*`/`role` attribute
+    anywhere in the app.
+15. **Offline banner** — the PWA service worker (item 10) already caches
+    everything for genuine offline use, but nothing tells the user they're
+    offline and looking at a cached copy. A small `navigator.onLine`-driven
+    banner closes that loop with no new dependency.
+16. **Pre-filled bug report link** — the footer's "report a bug" link
+    currently opens a blank GitHub issue. Since shareable links (item 7)
+    already encode the exact current selection, pre-filling the issue body
+    with that link (plus browser/locale info) turns every bug report into
+    an exact repro instead of a guessing game.

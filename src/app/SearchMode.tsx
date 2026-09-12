@@ -235,7 +235,7 @@ export default function SearchMode() {
         <button
           onClick={calculate}
           disabled={calculating}
-          className="glint accent-gradient rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
+          className="no-print glint accent-gradient rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
         >
           {calculating ? t("searchCalculating", locale) : t("searchCalculate", locale)}
         </button>

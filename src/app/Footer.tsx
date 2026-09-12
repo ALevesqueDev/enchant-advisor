@@ -41,7 +41,7 @@ export default function Footer({ locale }: { locale: Locale }) {
         {t("footerVersionPrefix", locale)} <span className="font-medium text-foreground">{GAME_VERSION}</span>{" "}
         {t("footerVersionSuffix", locale)} {DATA_VERIFIED_DATE}. {t("footerVersionNote", locale)}
       </p>
-      <div className="mt-3">
+      <div className="no-print mt-3">
         {/* href is a working (just unprefilled) fallback for no-JS/before hydration; onClick upgrades it with the live state. */}
         <a
           href={GITHUB_NEW_ISSUE_URL}

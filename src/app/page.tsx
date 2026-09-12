@@ -200,14 +200,14 @@ export default function Home() {
           <h1 className="font-display accent-text mt-4 text-4xl font-bold sm:text-5xl">Enchant Advisor</h1>
           <p className="mt-2 max-w-xl text-sm text-muted sm:text-base">{t("heroTagline", locale)}</p>
         </div>
-        <div className="flex justify-center gap-2 sm:justify-end">
+        <div className="no-print flex justify-center gap-2 sm:justify-end">
           <CopyLinkButton locale={locale} />
           <LocaleToggle locale={locale} setLocale={setLocale} />
         </div>
       </div>
 
       {/* Mode toggle */}
-      <div className="panel mt-8 inline-flex gap-1 p-1" role="group">
+      <div className="no-print panel mt-8 inline-flex gap-1 p-1" role="group">
         <button
           onClick={() => setMode("advisor")}
           aria-pressed={mode === "advisor"}
@@ -279,7 +279,11 @@ export default function Home() {
             <SectionLabel index="2">{t("step2CurrentEnchants", locale)}</SectionLabel>
             <div className="panel mt-3 divide-y divide-[var(--surface-border)]">
               {applicable.map((e) => (
-                <div key={e.id} className="flex items-center justify-between gap-4 px-4 py-2.5">
+                <div
+                  key={e.id}
+                  data-has-level={current[e.id] ? "true" : "false"}
+                  className="flex items-center justify-between gap-4 px-4 py-2.5"
+                >
                   <label htmlFor={`current-${e.id}`} className="flex items-center gap-2 text-sm">
                     <RarityDot weight={e.weight} locale={locale} />
                     {enchantmentName(e.id, locale)}

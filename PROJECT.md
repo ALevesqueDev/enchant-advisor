@@ -341,7 +341,19 @@ nothing new user-facing, nothing that adds runtime weight.
     render the `title` field as visible text alongside it. Verified
     locally: correct `og:*`/`twitter:*` tags with absolute URLs, image
     served with the right content-type.
-20. **Print stylesheet** — pure CSS (`@media print`), no JS: hides the
-    buttons/toggles and keeps just the tables (recommendation, anvil
-    cost, search odds) for anyone who wants a paper copy next to their
-    real enchanting table.
+20. ~~Print stylesheet~~ — done: a `@media print` block in `globals.css`
+    turns the app into a plain paper "shopping list". Reuses the
+    accessibility pass's `aria-pressed` attributes (item 14) to hide
+    every non-selected choice in the category/goal/mode/locale toggle
+    groups — only the active pick in each group prints — plus a new
+    `data-has-level` attribute so a "current enchants" row still at
+    "None" doesn't print as noise. Explicit `.no-print` on pure-action
+    controls (Calculate, Copy link, the toggles, the bug-report link, the
+    no-JS/offline banners). Also fixes a real print bug this surfaced:
+    `.accent-gradient`/`.accent-text` render via a background-image (for
+    the gradient fill/transparent-text trick) — printed with "background
+    graphics" off (most printers' default), that background silently
+    disappears and leaves invisible white-on-white text; forced to a
+    plain black for print instead. Forces the light color palette
+    regardless of system dark-mode preference, since nobody wants a
+    near-black page eating a print cartridge.

@@ -36,7 +36,7 @@ export default function OfflineBanner({ locale }: { locale: Locale }) {
     <div
       role="status"
       aria-live="polite"
-      className="mb-4 rounded-lg px-4 py-2 text-center text-xs font-medium"
+      className="no-print mb-4 rounded-lg px-4 py-2 text-center text-xs font-medium"
       style={{ background: "var(--status-upgrade-bg)", color: "var(--status-upgrade-fg)" }}
     >
       {t("offlineBanner", locale)}

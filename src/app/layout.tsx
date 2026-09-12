@@ -81,7 +81,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             JS, but every interaction (item picker, calculations, language
             toggle) needs it — this only shows up with JS actually disabled. */}
         <noscript>
-          <div style={{ background: "#7c3aed", color: "#fff", padding: "10px 16px", textAlign: "center", fontSize: 14 }}>
+          <div
+            className="no-print"
+            style={{ background: "#7c3aed", color: "#fff", padding: "10px 16px", textAlign: "center", fontSize: 14 }}
+          >
             Cette page a besoin de JavaScript pour fonctionner. / This page requires JavaScript to work.
           </div>
         </noscript>

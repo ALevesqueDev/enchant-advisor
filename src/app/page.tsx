@@ -14,6 +14,7 @@ import { encodeHave, readShareParams, patchShareParams } from "@/lib/shareLink";
 import { useLocale } from "./LocaleContext";
 import { advisorReducer, initialAdvisorState, CATEGORIES } from "./advisorState";
 import SearchMode from "./SearchMode";
+import StatsMode from "./StatsMode";
 import Footer from "./Footer";
 import CopyLinkButton from "./CopyLinkButton";
 import OfflineBanner from "./OfflineBanner";
@@ -101,7 +102,7 @@ function AcquisitionHint({
 
 export default function Home() {
   const { locale, setLocale } = useLocale();
-  const [mode, setMode] = useState<"advisor" | "search">("advisor");
+  const [mode, setMode] = useState<"advisor" | "search" | "stats">("advisor");
   const [advisor, dispatch] = useReducer(advisorReducer, initialAdvisorState("pickaxe"));
   const { category, material, goalId, current } = advisor;
 
@@ -133,7 +134,7 @@ export default function Home() {
   // history.replaceState() rather than routing.
   useEffect(() => {
     if (mode !== "advisor") {
-      patchShareParams({ m: "s", l: locale });
+      patchShareParams({ m: mode === "stats" ? "t" : "s", l: locale });
       return;
     }
     patchShareParams({
@@ -264,7 +265,11 @@ export default function Home() {
           everything above it was centered on mobile — visually
           inconsistent, reported as looking "décentré". */}
       <div className="mt-8 text-center sm:text-left">
-        <div className="no-print panel inline-flex gap-1 p-1" role="group" aria-label="Advisor or Search mode / Mode Conseiller ou Recherche">
+        <div
+          className="no-print panel inline-flex flex-wrap justify-center gap-1 p-1"
+          role="group"
+          aria-label="Advisor, Search, or Stats mode / Mode Conseiller, Recherche ou Statistiques"
+        >
           <button
             onClick={() => setMode("advisor")}
             aria-pressed={mode === "advisor"}
@@ -283,10 +288,20 @@ export default function Home() {
           >
             {t("modeSearch", locale)}
           </button>
+          <button
+            onClick={() => setMode("stats")}
+            aria-pressed={mode === "stats"}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+              mode === "stats" ? "accent-gradient text-white shadow-sm" : "text-muted hover:text-foreground"
+            }`}
+          >
+            {t("modeStats", locale)}
+          </button>
         </div>
       </div>
 
       {mode === "search" && <SearchMode />}
+      {mode === "stats" && <StatsMode />}
 
       {mode === "advisor" && (
         <>

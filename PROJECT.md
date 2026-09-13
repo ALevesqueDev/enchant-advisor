@@ -775,3 +775,94 @@ percentages, unrelated to the code change); fixed by seeding
 capture so both runs see byte-identical "random" numbers. With that,
 before/after came back pixel-identical (`maxDiffPixelRatio: 0` at every
 viewport) — confirming all five changes are genuinely invisible.
+
+## Stats Calculator — Phase 1: melee damage, DPS, Unbreaking (v1.8.0)
+
+Third mode, "Calculateur de statistiques" — scoped through an extensive
+`grilling` session (see the conversation log; not reproduced in full
+here) that settled a large design tree: full multi-slot loadout builder
+(not one item at a time), a live 3D character (skinview3d) rather than a
+static icon, target-type auto-detected from the enchant chosen rather
+than a separate selector, damage-per-hit AND DPS shown together, and a
+4-phase rollout (melee+DPS+Unbreaking → mining speed → armor, pending its
+own formula-verification pass → bow/crossbow/trident/mace/spear). The
+"kit complet" loadout-planner idea flagged much earlier in this file's
+roadmap turned out to be the same feature as this one, once the design
+tree was worked through — they were merged rather than built twice.
+
+**This is the app's first-ever runtime dependency** beyond
+next/react/react-dom, and the first feature with a genuinely new source
+of numbers: not enchanting-table/anvil mechanics (already deeply
+verified all session) but combat formulas, a different part of the game
+entirely. Every number below was freshly fetched from misode/mcmeta this
+session (26.2-data for enchantment `effects`, 26.2-summary for
+`item_components/data.json`'s base weapon attributes) — not reused from
+memory or an earlier session's cache, and re-verified even for
+enchantments (sharpness/protection/efficiency) already fetched in an
+earlier pass, specifically to avoid assuming a cached value still holds.
+
+**Real discovery that changed the plan**: modern Minecraft's
+data-driven enchantments store their gameplay-effect FORMULAS as
+structured data in the same enchantment JSON already used for
+weight/cost (an `effects` field — e.g. sharpness:
+`{type: add, value: {type: linear, base: 1.0, per_level_above_first: 0.5}}`).
+This is why "very precise" combat stats are feasible at all with the
+same sourcing discipline as everything else in this app, rather than
+falling back to wiki numbers. Roughly half the effects are gated by a
+generic `requirements` predicate system (target-mob-type checks,
+damage-source-tag checks, `all_of`/`inverted` trees) — deliberately NOT
+built as a general interpreter yet (see weaponStats.ts's header): only
+Phase 1's actual 3 target types (generic/undead/arthropod) are
+hardcoded. Build the general predicate system only when a real second
+use case demands it, not speculatively.
+
+**Data layer** (`weapon-data.json`, `weaponStats.ts`): base attack
+damage/speed for sword+axe × all 7 tracked materials (confirmed copper
+sword/axe exist, matching what materials.ts already assumed), plus
+Sharpness/Smite/Bane of Arthropods (damage + mob-type target),
+Sweeping Edge (sweep-attack ratio), Fire Aspect (burn seconds), and
+Unbreaking's non-armor save-chance branch — all pure functions, 12 new
+Vitest tests. One documented, real gap: the player's own base 1.0
+attack_damage / 4.0 attack_speed (that every weapon modifier stacks on
+top of) is hardcoded in Minecraft's Java source, not exposed by any
+generator/data-pack export anywhere — cross-checked instead against
+well-known, stable vanilla numbers (diamond sword = 7 dmg/1.6 attacks-
+per-second) rather than presented as equally solid as the generator-
+sourced fields.
+
+**skinview3d** (MIT, Three.js-based) renders a live-rotating 3D
+character. Dynamically imported (`import("skinview3d")` inside a
+`useEffect`, never a top-level import) so it never touches SSR and, per
+`next build`'s own output, code-splits into its own ~524KB chunk that
+doesn't appear anywhere in the initial page load — confirmed by grepping
+for the chunk hash in the built HTML. Advisor/Search visitors pay zero
+cost for this; only Stats-mode visitors load it.
+
+**The skin is an original, non-Mojang placeholder** — a small
+programmatically-drawn (canvas, not a bundled image asset) "enchanted
+construct" in the app's own accent colors, legacy 64×32 skin layout
+(skinview3d auto-mirrors the left arm/leg from the right, avoiding any
+risk of mis-placing the extended 64×64 format's separate left-side UV
+regions). Deliberately not a Steve/Alex recreation: Mojang's usage
+guidelines restrict redistributing their own texture/graphics assets,
+confirmed via their published guidelines page during scoping. Real
+skin-by-username lookup (via Mojang's session-server API) is designed
+for (username field, localStorage-cached same pattern as locale) but
+NOT wired up yet — CORS behavior of Mojang's API from a browser origin
+wasn't verified this pass, and shipping a silently-broken network call
+felt worse than an honest "coming soon" caption. Small follow-up, not
+Phase 2/3/4.
+
+Real Minecraft armor textures (for a later phase's armor visualization)
+can't be bundled for the same Mojang-assets reason — will need original
+stylized art per material tier, not extracted game textures.
+
+Other equipment slots (helmet/chestplate/leggings/boots/offhand) are
+visible on the page now, marked "Bientôt" — the page's end state is the
+full loadout from day one; phases add real stat coverage to slots
+already on screen, rather than each phase being a separate standalone
+tool.
+
+Bumped to v1.8.0 (new feature; also the version that introduces the
+app's first non-framework dependency, worth flagging on its own even
+though the version-bump reason is the feature, not the dependency).

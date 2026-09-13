@@ -69,7 +69,7 @@ test("mode toggle is centered on mobile, matching the hero content above it", as
   const { groupCenterX, pageCenterX } = await page.evaluate(() => {
     // Not [role="group"] alone -- the locale toggle (EN/FR) is also a
     // role="group" earlier in the DOM.
-    const group = document.querySelector('[role="group"][aria-label*="Advisor or Search"]');
+    const group = document.querySelector('[role="group"][aria-label*="Advisor, Search"]');
     if (!group) throw new Error("mode toggle group not found");
     const r = group.getBoundingClientRect();
     return { groupCenterX: r.left + r.width / 2, pageCenterX: window.innerWidth / 2 };
@@ -118,6 +118,32 @@ test("comparison panel renders two columns without causing mobile overflow", asy
   await page.locator("#compare-enchant-select").selectOption("fortune");
   await page.getByRole("button", { name: /Comparer/ }).click();
   await page.getByText(/meilleures chances par tentative|mêmes chances/).waitFor();
+
+  const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
+});
+
+// Regression coverage for the Stats mode's Phase 1 (2026-09-13): drives the
+// real flow -- switch mode, change the damage enchant's level, confirm the
+// displayed damage actually updates (proves the calculation is wired to the
+// UI, not just present in isolation) -- and checks mobile overflow, since
+// this is the first mode with a live 3D canvas (skinview3d) as well as a
+// two-column equipment/character layout.
+test("stats mode computes live damage and stays overflow-free on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 900 });
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Calculateur de statistiques" }).click();
+  await page.getByText("Dégâts par coup").waitFor();
+
+  const damageValue = page.locator("text=Dégâts par coup").locator("..").locator(".accent-text");
+  const before = await damageValue.textContent();
+
+  await page.locator("#stats-damage-level-select").selectOption("1");
+  await expect(damageValue).not.toHaveText(before ?? "");
 
   const { scrollWidth, clientWidth } = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,

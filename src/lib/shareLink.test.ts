@@ -65,6 +65,10 @@ describe("readShareParams", () => {
     expect(decoded.search).toMatchObject({ bookshelves: 9, luckOfTheSea: 2 });
   });
 
+  it("recognizes the stats mode letter", () => {
+    expect(readShareParams(new URLSearchParams({ m: "t" })).mode).toBe("stats");
+  });
+
   it("ignores an unrecognized mode letter rather than guessing", () => {
     expect(readShareParams(new URLSearchParams({ m: "x" })).mode).toBeNull();
   });

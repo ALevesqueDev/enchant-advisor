@@ -1,0 +1,20 @@
+{
+  "sword": {
+    "wood": { "attackDamage": 4, "attackSpeed": 1.6, "maxDamage": 59 },
+    "stone": { "attackDamage": 5, "attackSpeed": 1.6, "maxDamage": 131 },
+    "iron": { "attackDamage": 6, "attackSpeed": 1.6, "maxDamage": 250 },
+    "golden": { "attackDamage": 4, "attackSpeed": 1.6, "maxDamage": 32 },
+    "diamond": { "attackDamage": 7, "attackSpeed": 1.6, "maxDamage": 1561 },
+    "netherite": { "attackDamage": 8, "attackSpeed": 1.6, "maxDamage": 2031 },
+    "copper": { "attackDamage": 5, "attackSpeed": 1.6, "maxDamage": 190 }
+  },
+  "axe": {
+    "wood": { "attackDamage": 7, "attackSpeed": 0.8, "maxDamage": 59 },
+    "stone": { "attackDamage": 9, "attackSpeed": 0.8, "maxDamage": 131 },
+    "iron": { "attackDamage": 9, "attackSpeed": 0.9, "maxDamage": 250 },
+    "golden": { "attackDamage": 7, "attackSpeed": 1.0, "maxDamage": 32 },
+    "diamond": { "attackDamage": 9, "attackSpeed": 1.0, "maxDamage": 1561 },
+    "netherite": { "attackDamage": 10, "attackSpeed": 1.0, "maxDamage": 2031 },
+    "copper": { "attackDamage": 9, "attackSpeed": 0.8, "maxDamage": 190 }
+  }
+}

@@ -29,7 +29,10 @@ import type { Material } from "./materials";
 const PLAYER_BASE_ATTACK_DAMAGE = 1.0;
 const PLAYER_BASE_ATTACK_SPEED = 4.0;
 
-export type MeleeWeapon = "sword" | "axe";
+export type MeleeWeapon = "sword" | "axe" | "trident" | "mace";
+
+/** Trident and mace have no material variants (materialsFor() already returns [] for both) — one fixed real-world item each, not seven material tiers. */
+export const FIXED_STAT_WEAPONS: MeleeWeapon[] = ["trident", "mace"];
 
 export interface WeaponBaseStats {
   attackDamage: number;
@@ -37,11 +40,17 @@ export interface WeaponBaseStats {
   maxDamage: number;
 }
 
-const WEAPON_DATA = weaponData as Record<MeleeWeapon, Record<string, WeaponBaseStats>>;
+const WEAPON_DATA = weaponData as Record<string, Record<string, WeaponBaseStats> | WeaponBaseStats>;
 
-/** Base damage/speed/durability for a weapon+material pair — already includes the player's own base attributes (verify: diamond sword = 7.0 dmg, 1.6/s). */
+/**
+ * Base damage/speed/durability for a weapon (+ material, for sword/axe --
+ * ignored for trident/mace, which have a single fixed stat block instead)
+ * — already includes the player's own base attributes (verify: diamond
+ * sword = 7.0 dmg, 1.6/s).
+ */
 export function weaponBaseStats(weapon: MeleeWeapon, material: Material): WeaponBaseStats {
-  const stats = WEAPON_DATA[weapon]?.[material];
+  const entry = WEAPON_DATA[weapon];
+  const stats = FIXED_STAT_WEAPONS.includes(weapon) ? (entry as WeaponBaseStats) : (entry as Record<string, WeaponBaseStats>)?.[material];
   if (!stats) throw new Error(`No weapon data for ${weapon}/${material}`);
   return stats;
 }
@@ -54,7 +63,7 @@ function linear(base: number, perLevelAboveFirst: number, level: number): number
   return level > 0 ? base + perLevelAboveFirst * (level - 1) : 0;
 }
 
-export type DamageTarget = "generic" | "undead" | "arthropod";
+export type DamageTarget = "generic" | "undead" | "arthropod" | "aquatic";
 
 interface DamageEnchant {
   target: DamageTarget;
@@ -67,6 +76,7 @@ const DAMAGE_ENCHANTS: Record<string, DamageEnchant> = {
   sharpness: { target: "generic", base: 1.0, perLevelAboveFirst: 0.5 },
   smite: { target: "undead", base: 2.5, perLevelAboveFirst: 2.5 },
   bane_of_arthropods: { target: "arthropod", base: 2.5, perLevelAboveFirst: 2.5 },
+  impaling: { target: "aquatic", base: 2.5, perLevelAboveFirst: 2.5 },
 };
 
 export const DAMAGE_ENCHANT_IDS = Object.keys(DAMAGE_ENCHANTS);

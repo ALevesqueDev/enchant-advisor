@@ -26,6 +26,7 @@ import {
   type ArmorPieceEnchant,
   type ProtectionEnchantId,
 } from "@/lib/armorStats";
+import { powerBonusDamage, piercingCount, quickChargeReductionSeconds } from "@/lib/rangedStats";
 import { useLocale } from "./LocaleContext";
 import LabeledSelect from "./LabeledSelect";
 import { buildCharacterSkin, type ArmorLoadout } from "./characterSkin";
@@ -147,6 +148,11 @@ export default function StatsMode() {
   const [efficiencyLevel, setEfficiencyLevel] = useState(5);
   const [armor, setArmor] = useState<ArmorLoadout>({});
   const [armorProtection, setArmorProtection] = useState<Partial<Record<ArmorSlot, ArmorPieceEnchant>>>({});
+  const [powerLevel, setPowerLevel] = useState(0);
+  const [infinityOn, setInfinityOn] = useState(false);
+  const [piercingLevel, setPiercingLevel] = useState(0);
+  const [multishotOn, setMultishotOn] = useState(false);
+  const [quickChargeLevel, setQuickChargeLevel] = useState(0);
   const [username, setUsername] = useState("");
   const [skinCaption, setSkinCaption] = useState<string | null>(null);
 
@@ -284,9 +290,13 @@ export default function StatsMode() {
 
   function changeWeapon(w: MeleeWeapon) {
     setWeapon(w);
-    if (!materialsFor(w).includes(material)) setMaterial(materialsFor(w)[0]);
+    // Trident/mace have no material variants (materialsFor returns []) --
+    // leave `material` alone rather than setting it to undefined; nothing
+    // reads it for a fixed-stat weapon anyway (weaponBaseStats ignores it).
+    if (materialsFor(w).length > 0 && !materialsFor(w).includes(material)) setMaterial(materialsFor(w)[0]);
     if (!enchantmentById("sweeping_edge").categories.includes(w)) setSweepLevel(0);
     if (!enchantmentById("fire_aspect").categories.includes(w)) setFireLevel(0);
+    if (activeEnchantId && !enchantmentById(activeEnchantId).categories.includes(w)) setDamageEnchantId("none");
   }
 
   const base = weaponBaseStats(weapon, material);
@@ -319,6 +329,7 @@ export default function StatsMode() {
     generic: t("statsTargetGeneric", locale),
     undead: t("statsTargetUndead", locale),
     arthropod: t("statsTargetArthropod", locale),
+    aquatic: t("statsTargetAquatic", locale),
   };
 
   return (
@@ -369,19 +380,23 @@ export default function StatsMode() {
             >
               <option value="sword">{bareItemName("sword", locale)}</option>
               <option value="axe">{bareItemName("axe", locale)}</option>
+              <option value="trident">{bareItemName("trident", locale)}</option>
+              <option value="mace">{bareItemName("mace", locale)}</option>
             </LabeledSelect>
-            <LabeledSelect
-              id="stats-material-select"
-              label={t("step1Material", locale)}
-              value={material}
-              onChange={(e) => setMaterial(e.target.value as Material)}
-            >
-              {materialsFor(weapon).map((m) => (
-                <option key={m} value={m}>
-                  {itemName(weapon, m, locale)}
-                </option>
-              ))}
-            </LabeledSelect>
+            {materialsFor(weapon).length > 0 && (
+              <LabeledSelect
+                id="stats-material-select"
+                label={t("step1Material", locale)}
+                value={material}
+                onChange={(e) => setMaterial(e.target.value as Material)}
+              >
+                {materialsFor(weapon).map((m) => (
+                  <option key={m} value={m}>
+                    {itemName(weapon, m, locale)}
+                  </option>
+                ))}
+              </LabeledSelect>
+            )}
           </div>
 
           <div className="mt-3 flex flex-wrap gap-3">
@@ -392,7 +407,7 @@ export default function StatsMode() {
               onChange={(e) => setDamageEnchantId(e.target.value)}
             >
               <option value="none">{t("noneOption", locale)}</option>
-              {DAMAGE_ENCHANT_IDS.map((id) => (
+              {DAMAGE_ENCHANT_IDS.filter(weaponHas).map((id) => (
                 <option key={id} value={id}>
                   {enchantmentName(id, locale)}
                 </option>
@@ -606,6 +621,95 @@ export default function StatsMode() {
           ))}
         </div>
         <p className="mt-3 text-xs text-muted">{t("statsBreakTimeNote", locale)}</p>
+      </section>
+
+      <section className="panel mt-4 p-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">{t("statsRangedHeader", locale)}</h2>
+        <div className="mt-3 flex flex-wrap gap-3">
+          <LabeledSelect
+            id="stats-power-select"
+            label={t("statsPowerLabel", locale)}
+            value={powerLevel}
+            onChange={(e) => setPowerLevel(Number(e.target.value))}
+          >
+            {Array.from({ length: enchantmentById("power").maxLevel + 1 }, (_, i) => i).map((lvl) => (
+              <option key={lvl} value={lvl}>
+                {lvl === 0 ? t("noneOption", locale) : lvl}
+              </option>
+            ))}
+          </LabeledSelect>
+          <LabeledSelect
+            id="stats-piercing-select"
+            label={t("statsPiercingLabel", locale)}
+            value={piercingLevel}
+            onChange={(e) => setPiercingLevel(Number(e.target.value))}
+          >
+            {Array.from({ length: enchantmentById("piercing").maxLevel + 1 }, (_, i) => i).map((lvl) => (
+              <option key={lvl} value={lvl}>
+                {lvl === 0 ? t("noneOption", locale) : lvl}
+              </option>
+            ))}
+          </LabeledSelect>
+          <LabeledSelect
+            id="stats-quickcharge-select"
+            label={t("statsQuickChargeLabel", locale)}
+            value={quickChargeLevel}
+            onChange={(e) => setQuickChargeLevel(Number(e.target.value))}
+          >
+            {Array.from({ length: enchantmentById("quick_charge").maxLevel + 1 }, (_, i) => i).map((lvl) => (
+              <option key={lvl} value={lvl}>
+                {lvl === 0 ? t("noneOption", locale) : lvl}
+              </option>
+            ))}
+          </LabeledSelect>
+          <label className="flex items-center gap-2 self-end pb-2 text-sm">
+            <input type="checkbox" checked={infinityOn} onChange={(e) => setInfinityOn(e.target.checked)} className="h-3.5 w-3.5" />
+            {t("statsInfinityLabel", locale)}
+          </label>
+          <label className="flex items-center gap-2 self-end pb-2 text-sm">
+            <input type="checkbox" checked={multishotOn} onChange={(e) => setMultishotOn(e.target.checked)} className="h-3.5 w-3.5" />
+            {t("statsMultishotLabel", locale)}
+          </label>
+        </div>
+
+        {(powerLevel > 0 || piercingLevel > 0 || quickChargeLevel > 0 || infinityOn || multishotOn) && (
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {powerLevel > 0 && (
+              <div className="rounded-lg bg-[var(--surface-raised)] p-3">
+                <div className="text-xs text-muted">{t("statsPowerLabel", locale)}</div>
+                <div className="font-display accent-text mt-1 text-2xl font-bold">+{powerBonusDamage(powerLevel).toFixed(1)}</div>
+              </div>
+            )}
+            {piercingLevel > 0 && (
+              <div className="rounded-lg bg-[var(--surface-raised)] p-3">
+                <div className="text-xs text-muted">{t("statsPiercingLabel", locale)}</div>
+                <div className="font-display accent-text mt-1 text-2xl font-bold">+{piercingCount(piercingLevel)}</div>
+              </div>
+            )}
+            {quickChargeLevel > 0 && (
+              <div className="rounded-lg bg-[var(--surface-raised)] p-3">
+                <div className="text-xs text-muted">{t("statsQuickChargeLabel", locale)}</div>
+                <div className="font-display accent-text mt-1 text-2xl font-bold">
+                  {quickChargeReductionSeconds(quickChargeLevel).toFixed(2)}
+                  {t("statsSecondsSuffix", locale)}
+                </div>
+              </div>
+            )}
+            {multishotOn && (
+              <div className="rounded-lg bg-[var(--surface-raised)] p-3">
+                <div className="text-xs text-muted">{t("statsMultishotLabel", locale)}</div>
+                <div className="font-display accent-text mt-1 text-lg font-bold">{t("statsMultishotValue", locale)}</div>
+              </div>
+            )}
+            {infinityOn && (
+              <div className="rounded-lg bg-[var(--surface-raised)] p-3">
+                <div className="text-xs text-muted">{t("statsInfinityLabel", locale)}</div>
+                <div className="font-display accent-text mt-1 text-lg font-bold">{t("statsInfinityValue", locale)}</div>
+              </div>
+            )}
+          </div>
+        )}
+        <p className="mt-3 text-xs text-muted">{t("statsRangedNote", locale)}</p>
       </section>
 
       <section className="panel mt-4 p-4">

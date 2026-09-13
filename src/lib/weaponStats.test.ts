@@ -26,6 +26,12 @@ describe("weaponBaseStats", () => {
     }
   });
 
+  it("trident and mace ignore the material argument -- one fixed item each, no tiers", () => {
+    expect(weaponBaseStats("trident", "diamond")).toEqual({ attackDamage: 9, attackSpeed: 1.1, maxDamage: 250 });
+    expect(weaponBaseStats("trident", "wood")).toEqual(weaponBaseStats("trident", "diamond"));
+    expect(weaponBaseStats("mace", "netherite")).toEqual({ attackDamage: 6, attackSpeed: 0.6, maxDamage: 500 });
+  });
+
   it("throws on an unknown weapon/material pair rather than returning undefined", () => {
     // @ts-expect-error -- deliberately an invalid material to test the guard
     expect(() => weaponBaseStats("sword", "obsidian")).toThrow();
@@ -54,6 +60,12 @@ describe("computeMeleeDamage", () => {
   it("Bane of Arthropods is arthropod-only and scales +2.5 base, +2.5/level", () => {
     expect(computeMeleeDamage(diamondSword, "bane_of_arthropods", 5).damagePerHit).toBeCloseTo(7 + 2.5 + 2.5 * 4);
     expect(damageEnchantTarget("bane_of_arthropods")).toBe("arthropod");
+  });
+
+  it("Impaling is aquatic-only (trident) and scales +2.5 base, +2.5/level", () => {
+    const trident = weaponBaseStats("trident", "diamond");
+    expect(computeMeleeDamage(trident, "impaling", 5).damagePerHit).toBeCloseTo(9 + 2.5 + 2.5 * 4);
+    expect(damageEnchantTarget("impaling")).toBe("aquatic");
   });
 
   it("dps is always damagePerHit x the weapon's own attack speed", () => {

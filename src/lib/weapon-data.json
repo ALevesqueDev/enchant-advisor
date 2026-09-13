@@ -16,5 +16,7 @@
     "diamond": { "attackDamage": 9, "attackSpeed": 1.0, "maxDamage": 1561 },
     "netherite": { "attackDamage": 10, "attackSpeed": 1.0, "maxDamage": 2031 },
     "copper": { "attackDamage": 9, "attackSpeed": 0.8, "maxDamage": 190 }
-  }
+  },
+  "trident": { "attackDamage": 9, "attackSpeed": 1.1, "maxDamage": 250 },
+  "mace": { "attackDamage": 6, "attackSpeed": 0.6, "maxDamage": 500 }
 }

@@ -270,3 +270,37 @@ test("stats mode computes live armor damage reduction across all 4 slots", async
   }));
   expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
 });
+
+// Regression coverage for the Stats mode's Phase 4 (2026-09-13): trident,
+// mace, and the bow/crossbow utility section. Switching to trident hides
+// the material select entirely (no tiers) and swaps in Impaling instead
+// of Sharpness/Smite/Bane -- exactly the kind of per-weapon filtering bug
+// already caught once for the axe (see the Sweeping Edge/Fire Aspect
+// test above), so this locks the same pattern down for the new weapons.
+test("stats mode's trident hides the material select and offers Impaling instead of Sharpness", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 1400 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Calculateur de statistiques" }).click();
+  await page.getByText("Dégâts par coup").waitFor();
+
+  await expect(page.locator("#stats-material-select")).toBeVisible();
+
+  await page.locator("#stats-weapon-select").selectOption("trident");
+
+  await expect(page.locator("#stats-material-select")).toHaveCount(0);
+  const enchantOptions = await page.locator("#stats-damage-enchant-select option").allTextContents();
+  expect(enchantOptions.some((t) => t.includes("Empalement"))).toBe(true);
+  expect(enchantOptions.some((t) => t.includes("Tranchant"))).toBe(false);
+});
+
+// Bow/crossbow utility stats -- Power's bonus damage in particular, since
+// it's explicitly NOT a final total (see rangedStats.ts's header), worth
+// confirming the UI doesn't accidentally present it as one.
+test("stats mode computes live ranged enchant bonuses", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Calculateur de statistiques" }).click();
+  await page.getByText("Arc et arbalète").waitFor();
+
+  await page.locator("#stats-power-select").selectOption("5");
+  await expect(page.getByText("+3.0")).toBeVisible();
+});

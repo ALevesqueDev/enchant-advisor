@@ -1005,3 +1005,44 @@ share of the reduction doesn't change), flagged plainly in the UI
 rather than presenting one number as universally true.
 
 Bumped to v1.11.0 (new feature).
+
+## Stats Calculator — Phase 4: trident, mace, bow/crossbow (v1.12.0)
+
+Closes out the originally-scoped phase plan (spear excluded throughout —
+confirmed absent from 26.2's generated data entirely, matching this
+project's own notes that it's a post-training-cutoff addition).
+
+**Trident and mace** slot straight into the existing melee-weapon
+machinery (`weaponStats.ts`) rather than needing new code: both carry
+real `attack_damage`/`attack_speed` attributes in the generated data,
+same shape as sword/axe. The one real difference: neither has material
+tiers (`materialsFor()` already returned `[]` for both, confirmed
+against the app's own existing data) — one fixed item each, not seven.
+Impaling joins the damage-enchant set with a new `"aquatic"` target
+type, following the same target-detection pattern Smite/Bane already
+established. **Proactively applied the same per-weapon filtering
+already fixed once for the axe** (v1.8.1's real bug: a weapon switch not
+narrowing which enchants show) — the damage-enchant dropdown, the
+material select, and Sweeping Edge/Fire Aspect are now all filtered
+through `enchantmentById(id).categories.includes(weapon)`/
+`materialsFor(weapon).length > 0` from the start for trident/mace,
+rather than shipping the same bug a second time and fixing it after a
+report.
+
+**Bow/crossbow** (`rangedStats.ts`) deliberately stops short of a "final
+arrow damage" or "final reload time" number: confirmed in the generated
+data that neither item carries a base `attack_damage` attribute at all
+(damage comes from the fired arrow's own physics, not the launching
+item), and no base crossbow charge time is exposed anywhere either. Power,
+Piercing, Quick Charge, Multishot, and Infinity are shown as their own
+verified bonus/reduction/flag values instead of being added to or
+subtracted from a number this app has no source for — the UI says so
+explicitly, rather than quietly presenting a partial calculation as a
+complete one.
+
+Bumped to v1.12.0 (new feature). This completes the originally-scoped
+4-phase Stats Calculator rollout — future additions (a fuller loadout
+with offhand/shield, movement/utility enchants deferred back in the
+original grilling session, the generic `requirements` predicate
+interpreter if a future phase actually needs it) are their own separate
+initiatives from here, not numbered phases of this one.

@@ -1091,3 +1091,40 @@ keeping this at zero new bytes of art. Everything outside the grid itself
 gradient language, per the same request.
 
 Bumped to v1.13.0 (new feature).
+
+## Bug: service worker never invalidated its own cache on deploy (v1.13.1)
+
+Real user report: right after v1.13.0 shipped, a returning visitor
+didn't see the new Anvil mode. Root cause: `public/sw.js`'s
+`CACHE_NAME` was a hand-typed constant (`"enchant-advisor-v1"`) that
+never got bumped across all 13 deploys this session. The service
+worker's own strategy is stale-while-revalidate (answer instantly from
+whatever's cached, refresh in the background for next time) — with a
+constant cache name, that meant every single release needed a returning
+visitor to load the page TWICE before seeing anything new: once to
+silently trigger the background refresh, once more to actually see it.
+Silent and easy to forget, which is exactly what happened.
+
+Fixed by moving the service worker from a static `public/sw.js` file to
+a generated route (`src/app/sw.js/route.ts`) that embeds `APP_VERSION`
+into `CACHE_NAME` directly — every version bump now automatically
+invalidates the old cache, nothing left to remember by hand. Uses
+`export const dynamic = "force-static"` so it's still prerendered once
+at build time (confirmed via the build output: `○ /sw.js`, not `ƒ`) and
+served with `Cache-Control: no-cache` so browsers actually re-check it
+promptly rather than caching the service worker script itself for a
+long time (which would defeat the whole fix). New e2e test fetches
+`/sw.js` directly and asserts its `CACHE_NAME` contains the live
+`package.json` version, so this can't silently regress again.
+
+**Diagnosis note**: verifying the fix locally hit a real, separate
+snag — repeated `npm run build && npm run start` cycles left a stale
+Windows `node.exe` still bound to port 3000 (Git Bash's `pkill` doesn't
+reliably terminate native Windows processes), so several verification
+attempts were actually curling a zombie server from a PREVIOUS build,
+which made a working fix look broken. Resolved with `netstat -ano` to
+find the real PID and Windows' own `taskkill //F //PID`, not `pkill`.
+Worth remembering for any future "I just fixed this, why does it still
+show the old behavior locally" moment.
+
+Bumped to v1.13.1 (bug fix).

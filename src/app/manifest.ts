@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 // Next's app-dir file convention: this is auto-served at
 // /manifest.webmanifest and auto-linked from every page's <head> — no
 // manual <link rel="manifest"> needed. See PROJECT.md's PWA roadmap entry
-// and public/sw.js (the offline service worker this pairs with).
+// and src/app/sw.js/route.ts (the offline service worker this pairs with).
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Enchant Advisor",

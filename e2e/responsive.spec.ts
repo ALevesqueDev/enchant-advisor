@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import packageJson from "../package.json" with { type: "json" };
 
 // Regression test for a real bug (found 2026-09-12 via a user report,
 // diagnosed with a headless-browser feedback loop per the
@@ -347,4 +348,20 @@ test("anvil simulator blocks a mutually incompatible combination", async ({ page
   await page.locator("#anvil-sacrifice-enchant-select").selectOption("silk_touch");
 
   await expect(page.getByText("Incompatible")).toBeVisible();
+});
+
+// Regression test for a real user report (2026-09-13): the service
+// worker's CACHE_NAME was a hand-typed constant in public/sw.js that
+// never got bumped across 13 deploys, so a returning visitor's cached
+// copy (stale-while-revalidate answers instantly from cache) kept
+// showing an old version after every single release. Fixed by generating
+// sw.js from a route handler that embeds APP_VERSION automatically -- this
+// pins down that the served script's CACHE_NAME genuinely tracks the
+// live app version, not just that the route responds at all.
+test("service worker's cache name embeds the current app version", async ({ request }) => {
+  const response = await request.get("/sw.js");
+  expect(response.ok()).toBe(true);
+  expect(response.headers()["content-type"]).toContain("javascript");
+  const body = await response.text();
+  expect(body).toContain(`CACHE_NAME = "enchant-advisor-v${packageJson.version}"`);
 });

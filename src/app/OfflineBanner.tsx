@@ -6,7 +6,7 @@ import type { Locale } from "@/lib/i18n";
 import { isOnlineByDefault } from "./onlineStatus";
 
 /**
- * The service worker (public/sw.js, PWA support roadmap item) already
+ * The service worker (src/app/sw.js/route.ts, PWA support roadmap item) already
  * makes the app keep working with no connection by serving its cache —
  * this just tells the user that's what's happening, instead of leaving
  * them wondering why a "Calculate" they just ran might be using a stale

@@ -304,3 +304,47 @@ test("stats mode computes live ranged enchant bonuses", async ({ page }) => {
   await page.locator("#stats-power-select").selectOption("5");
   await expect(page.getByText("+3.0")).toBeVisible();
 });
+
+// Anvil simulator (2026-09-13): drives the real flow -- put Efficiency V
+// in the sacrifice slot on the default pickaxe, confirm the live cost
+// (anvilCost 1 x level 5 = 5) shows up, proving the UI is actually wired
+// to anvilSimulator.ts and not just rendering static slots.
+test("anvil simulator computes a live combine cost", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Enclume" }).click();
+  await page.getByText("Rien à faire").waitFor(); // the default, empty-slots state
+
+  await page.locator("#anvil-sacrifice-enchant-select").selectOption("efficiency");
+  await page.locator("#anvil-sacrifice-level-select").selectOption("5");
+
+  await expect(page.getByText("Rien à faire")).toHaveCount(0);
+  await expect(page.locator("#anvil-sim-cost")).toHaveText("5");
+});
+
+test("anvil simulator's slot grid stays overflow-free on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 900 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Enclume" }).click();
+  await page.locator(".mc-slot").first().waitFor();
+
+  const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
+});
+
+// Regression coverage for the real, documented source ambiguity this
+// feature made a deliberate call on (see anvilSimulator.ts's header):
+// Fortune + Silk Touch are mutually exclusive per the game's own
+// exclusive_set tag data, so the anvil should refuse the combination.
+test("anvil simulator blocks a mutually incompatible combination", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Enclume" }).click();
+  await page.getByText("Rien à faire").waitFor();
+
+  await page.locator("#anvil-target-enchant-select").selectOption("fortune");
+  await page.locator("#anvil-sacrifice-enchant-select").selectOption("silk_touch");
+
+  await expect(page.getByText("Incompatible")).toBeVisible();
+});

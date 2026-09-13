@@ -15,6 +15,27 @@ const UI = {
   modeAdvisor: { en: "Advisor", fr: "Conseiller" },
   modeSearch: { en: "Enchantment Search", fr: "Recherche d'enchantement" },
   modeStats: { en: "Stats Calculator", fr: "Calculateur de statistiques" },
+  modeAnvil: { en: "Anvil", fr: "Enclume" },
+
+  anvilSimTagline: { en: "Put anything in the two slots — see the exact result and cost.", fr: "Mets ce que tu veux dans les 2 emplacements — vois le résultat et le coût exacts." },
+  anvilSimTargetLabel: { en: "Target", fr: "Cible" },
+  anvilSimSacrificeLabel: { en: "Sacrifice (book)", fr: "Sacrifice (livre)" },
+  anvilSimResultLabel: { en: "Result", fr: "Résultat" },
+  anvilSimExistingEnchantLabel: { en: "Already has", fr: "A déjà" },
+  anvilSimPriorUsesLabel: { en: "Times used at the anvil before", fr: "Fois déjà utilisé à l'enclume" },
+  anvilSimRenameLabel: { en: "Rename (+1 level)", fr: "Renommer (+1 niveau)" },
+  anvilSimEmptySlot: { en: "Empty", fr: "Vide" },
+  anvilSimBlocked: {
+    en: "⚠ Incompatible — the anvil refuses this combination.",
+    fr: "⚠ Incompatible — l'enclume refuse cette combinaison.",
+  },
+  anvilSimBlockedNote: {
+    en: "One real source ambiguity here (see PROJECT.md): a wiki example elsewhere on the same page shows this succeeding instead, for a small surcharge — flagged, not silently picked.",
+    fr: "Une vraie zone grise ici (voir PROJECT.md) : un exemple ailleurs sur la même page du wiki montre ce cas réussir quand même, pour un petit surcoût — signalé, pas choisi en silence.",
+  },
+  anvilSimNothingToDo: { en: "Nothing to do — add a book or check \"Rename\".", fr: "Rien à faire — ajoute un livre ou coche « Renommer »." },
+  anvilSimCostLabel: { en: "Cost", fr: "Coût" },
+  anvilSimTooExpensiveShort: { en: "⚠ Too Expensive!", fr: "⚠ Trop cher !" },
 
   statsTagline: {
     en: "Build your loadout, see the real numbers — damage, DPS, and more — not just your odds of getting there.",

@@ -60,7 +60,8 @@ export interface AnvilPlan {
   anyTooExpensive: boolean;
 }
 
-function priorWorkPenalty(timesUsed: number): number {
+/** Exported so anvilSimulator.ts (the interactive 2-slot combine tool) can reuse the exact same formula rather than a second copy of it. */
+export function priorWorkPenalty(timesUsed: number): number {
   return Math.pow(2, timesUsed) - 1;
 }
 

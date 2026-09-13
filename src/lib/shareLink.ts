@@ -8,7 +8,7 @@ import type { EnchantSet, ItemCategory } from "./types";
 import type { Material } from "./materials";
 import type { Locale } from "./i18n";
 
-export type Mode = "advisor" | "search" | "stats";
+export type Mode = "advisor" | "search" | "stats" | "anvil";
 
 export interface AdvisorShareState {
   category: ItemCategory;
@@ -76,7 +76,7 @@ export interface DecodedShareState {
 /** Reads whatever was in the URL — every field is optional; the caller falls back to its own defaults for anything missing or invalid. */
 export function readShareParams(params: URLSearchParams): DecodedShareState {
   const m = params.get("m");
-  const mode: Mode | null = m === "a" ? "advisor" : m === "s" ? "search" : m === "t" ? "stats" : null;
+  const mode: Mode | null = m === "a" ? "advisor" : m === "s" ? "search" : m === "t" ? "stats" : m === "n" ? "anvil" : null;
 
   const l = params.get("l");
   const locale: Locale | null = l === "en" || l === "fr" ? l : null;

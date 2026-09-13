@@ -1046,3 +1046,48 @@ with offhand/shield, movement/utility enchants deferred back in the
 original grilling session, the generic `requirements` predicate
 interpreter if a future phase actually needs it) are their own separate
 initiatives from here, not numbered phases of this one.
+
+## Anvil combine simulator (v1.13.0)
+
+Fourth mode, "Enclume" — mirrors the real anvil GUI (target slot +
+sacrifice slot -> result), scoped through a short `grilling` round: one
+enchantment per slot (not a whole book's worth at once — `anvil.ts`'s own
+step-by-step model already assumes this, and generalizing to several
+enchants per side at once is real added complexity with no clear near-term
+need), sacrifice is always a book (not another item), no repair-with-
+material or durability modeling yet. `anvilSimulator.ts` reuses
+`anvil.ts`'s own `priorWorkPenalty()` directly (now exported) rather than
+a second copy of the same formula, per the user's explicit ask to avoid
+duplicating info across pages.
+
+**Renaming** (flat 1-level cost, verified verbatim against
+`minecraft.wiki/w/Anvil_mechanics`'s "Renaming" section — stacks with
+prior-work penalty without itself adding to it, capped at 39, a solo
+rename with an empty sacrifice slot is a legitimate standalone operation)
+is modeled with full confidence.
+
+**Incompatible enchantments** — a real, documented source contradiction,
+surfaced rather than silently resolved: the wiki page's own general rule
+states the anvil refuses the combination outright (a red "X") when the
+target already carries an enchantment mutually exclusive with what the
+sacrifice would add, but a worked example elsewhere on that SAME page
+shows that exact scenario completing anyway (small surcharge, sacrifice's
+enchant discarded) — which reads as leftover pre-1.13 wording given the
+page's own aside about that era's different behavior, but wasn't
+re-confirmed against a live current-version game this pass. Implemented
+the "refuse" rule (the clearly-stated general rule, not the stray
+example) and flagged the ambiguity directly in the UI when it triggers,
+rather than picking one silently.
+
+**Visual**: the 2-slot grid deliberately evokes the real inventory GUI's
+grey inset-bevel look (`.mc-slot` in globals.css — flat color + a
+beveled border, zero image assets, so zero risk of reproducing an actual
+Mojang texture) since recognizing "this is my anvil" was the explicit
+point of the request; slot contents are rendered as text (enchant name +
+level, in Minecraft's own enchanted-item aqua text color — a UI
+convention, not a copyrighted asset) rather than hand-drawn item icons,
+keeping this at zero new bytes of art. Everything outside the grid itself
+(headers, buttons, captions) stays in the app's existing panel/accent-
+gradient language, per the same request.
+
+Bumped to v1.13.0 (new feature).

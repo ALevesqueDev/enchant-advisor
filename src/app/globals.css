@@ -158,6 +158,31 @@ html {
 }
 
 /*
+ * The anvil simulator's slot grid -- deliberately evokes the real
+ * inventory GUI's grey inset-bevel look (a UI convention, not a
+ * reproduced texture: flat color + a beveled border, no image asset)
+ * since recognizing "this is my anvil" is the whole point of that
+ * feature. Everything else in that mode (headers, buttons, captions)
+ * stays in the app's own panel/accent-gradient language above.
+ */
+.mc-slot {
+  width: 4.5rem;
+  height: 4.5rem;
+  background: #8b8b8b;
+  border-style: solid;
+  border-width: 3px;
+  border-color: #373737 #ffffff #ffffff #373737;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.2;
+  color: #5cfcfc; /* Minecraft's own enchanted-item name color convention (aqua) -- a UI convention, not an asset */
+}
+
+/*
  * Print stylesheet — turns the on-screen app into a plain paper "shopping
  * list": the recommendation, anvil-cost, and search-odds tables are the
  * whole point of printing this; the pickers/toggles/buttons that produced

@@ -15,6 +15,7 @@ import { useLocale } from "./LocaleContext";
 import { advisorReducer, initialAdvisorState, CATEGORIES } from "./advisorState";
 import SearchMode from "./SearchMode";
 import StatsMode from "./StatsMode";
+import AnvilMode from "./AnvilMode";
 import Footer from "./Footer";
 import CopyLinkButton from "./CopyLinkButton";
 import OfflineBanner from "./OfflineBanner";
@@ -102,7 +103,7 @@ function AcquisitionHint({
 
 export default function Home() {
   const { locale, setLocale } = useLocale();
-  const [mode, setMode] = useState<"advisor" | "search" | "stats">("advisor");
+  const [mode, setMode] = useState<"advisor" | "search" | "stats" | "anvil">("advisor");
   const [advisor, dispatch] = useReducer(advisorReducer, initialAdvisorState("pickaxe"));
   const { category, material, goalId, current } = advisor;
 
@@ -134,7 +135,8 @@ export default function Home() {
   // history.replaceState() rather than routing.
   useEffect(() => {
     if (mode !== "advisor") {
-      patchShareParams({ m: mode === "stats" ? "t" : "s", l: locale });
+      const letter = mode === "stats" ? "t" : mode === "anvil" ? "n" : "s";
+      patchShareParams({ m: letter, l: locale });
       return;
     }
     patchShareParams({
@@ -268,7 +270,7 @@ export default function Home() {
         <div
           className="no-print panel inline-flex flex-wrap justify-center gap-1 p-1"
           role="group"
-          aria-label="Advisor, Search, or Stats mode / Mode Conseiller, Recherche ou Statistiques"
+          aria-label="Advisor, Search, Stats, or Anvil mode / Mode Conseiller, Recherche, Statistiques ou Enclume"
         >
           <button
             onClick={() => setMode("advisor")}
@@ -297,11 +299,21 @@ export default function Home() {
           >
             {t("modeStats", locale)}
           </button>
+          <button
+            onClick={() => setMode("anvil")}
+            aria-pressed={mode === "anvil"}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+              mode === "anvil" ? "accent-gradient text-white shadow-sm" : "text-muted hover:text-foreground"
+            }`}
+          >
+            {t("modeAnvil", locale)}
+          </button>
         </div>
       </div>
 
       {mode === "search" && <SearchMode />}
       {mode === "stats" && <StatsMode />}
+      {mode === "anvil" && <AnvilMode />}
 
       {mode === "advisor" && (
         <>

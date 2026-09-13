@@ -69,6 +69,10 @@ describe("readShareParams", () => {
     expect(readShareParams(new URLSearchParams({ m: "t" })).mode).toBe("stats");
   });
 
+  it("recognizes the anvil mode letter", () => {
+    expect(readShareParams(new URLSearchParams({ m: "n" })).mode).toBe("anvil");
+  });
+
   it("ignores an unrecognized mode letter rather than guessing", () => {
     expect(readShareParams(new URLSearchParams({ m: "x" })).mode).toBeNull();
   });

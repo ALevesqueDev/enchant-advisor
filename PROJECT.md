@@ -964,3 +964,44 @@ fixed set, not an attempt at a full block database this app has no
 verified source for.
 
 Bumped to v1.10.0 (new feature).
+
+## Stats Calculator — Phase 3: armor (v1.11.0)
+
+`armorStats.ts` — all 4 slots, all 8 materials, one of the 4 Protection
+enchant types + level per piece, combined into a % damage reduction for
+each of 4 damage types (generic/fire/blast/projectile). Both formula
+stages were re-fetched as byte-for-byte verbatim wikitext via the wiki's
+own MediaWiki API this session (a rendered-page fetch of the same
+content kept truncating mid-formula in an earlier pass — this upgrades
+that from "medium confidence" to fully verified):
+
+- Armor + toughness stage: `min(80, max(4/5*armor, 4*armor -
+  16*damage/(toughness+8)))`. **A real mistake caught before shipping**:
+  a first draft of this file mislabeled `4/5*armor` as the well-known
+  "20 armor = 80%" headline figure and `4*armor` as some secondary
+  number — backwards. The wiki's own prose settled it: `4*armor` (capped
+  at 80) is the reduction for a small/typical hit (this IS the familiar
+  80%-at-20-armor folk number, since 4×20=80) and `4/5*armor` is the
+  floor a big enough hit decays toward. Caught by writing the Vitest
+  suite against the well-known number before trusting the code, not
+  after — exactly the case for testing a formula against a fact you
+  already know, not just against its own logic.
+- Enchantment Protection Factor (EPF) stage: each applicable
+  enchantment's EPF summed (capped at 20), `reduction = EPF/25`.
+  Protection contributes EPF 1/level to ALL four damage types; Fire/
+  Blast/Projectile Protection each contribute EPF 2/level to only their
+  own type, stacking on top of whatever Protection itself already gives.
+  Verified in both directions against the raw enchantment JSON's
+  `per_level_above_first` fields (1/2/2/2), which match the wiki's own
+  EPF table exactly.
+
+The two stages combine multiplicatively (`1 - (1-a)*(1-b)`), not by
+addition -- two 50% reductions give 75% combined, not 100%.
+
+The headline number shown is for a **small/typical hit**, not a fixed
+armor rating independent of what's attacking -- a big enough hit gets
+less benefit from armor points specifically (though Protection's own
+share of the reduction doesn't change), flagged plainly in the UI
+rather than presenting one number as universally true.
+
+Bumped to v1.11.0 (new feature).

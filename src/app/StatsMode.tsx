@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { enchantmentById } from "@/lib/enchantments";
 import { materialsFor, type Material } from "@/lib/materials";
 import { enchantmentName, itemName, bareItemName } from "@/lib/i18n";
-import { t, blockLabel } from "@/lib/strings";
+import { t, blockLabel, damageTypeLabel } from "@/lib/strings";
 import {
   weaponBaseStats,
   computeMeleeDamage,
@@ -15,6 +15,17 @@ import {
   type MeleeWeapon,
 } from "@/lib/weaponStats";
 import { toolBaseSpeed, efficiencySpeedMultiplier, breakTimeSeconds, REFERENCE_BLOCKS } from "@/lib/miningStats";
+import {
+  armorPiecePoints,
+  totalEpf,
+  epfReductionPercent,
+  armorReductionTypicalPercent,
+  combinedReductionPercent,
+  type ArmorSlot,
+  type DamageType,
+  type ArmorPieceEnchant,
+  type ProtectionEnchantId,
+} from "@/lib/armorStats";
 import { useLocale } from "./LocaleContext";
 import LabeledSelect from "./LabeledSelect";
 import { buildCharacterSkin, type ArmorLoadout } from "./characterSkin";
@@ -37,11 +48,11 @@ function ComingSoonSlot({ label }: { label: string }) {
 }
 
 /**
- * One armor slot's material picker -- affects the 3D character's colors
- * (characterSkin.ts) immediately, but doesn't compute a real damage-
- * reduction stat yet (that's Phase 3, pending the dedicated armor-formula
- * verification pass). "None" is a real option, not just a default: an
- * empty slot is a legitimate loadout choice, not an unset field.
+ * One armor slot's material picker -- affects both the 3D character's
+ * colors (characterSkin.ts) and its contribution to the armor+toughness
+ * damage-reduction stage (armorStats.ts). "None" is a real option, not
+ * just a default: an empty slot is a legitimate loadout choice, not an
+ * unset field.
  */
 function ArmorSlotSelect({
   id,
@@ -74,6 +85,54 @@ function ArmorSlotSelect({
   );
 }
 
+const PROTECTION_ENCHANT_IDS: ProtectionEnchantId[] = ["protection", "fire_protection", "blast_protection", "projectile_protection"];
+
+/**
+ * One armor slot's Protection-family enchant + level, as a single combined
+ * dropdown (not a separate enchant-then-level pair) to keep 4 already-busy
+ * armor-slot rows from doubling in control count -- the 4 Protection
+ * types are mutually exclusive on one item anyway (enchantments.ts's own
+ * EXCLUSIVE_SETS), so "pick one enchant+level" is the whole real choice.
+ */
+function ArmorProtectionSelect({
+  id,
+  value,
+  onChange,
+  locale,
+}: {
+  id: string;
+  value: ArmorPieceEnchant | undefined;
+  onChange: (enchant: ArmorPieceEnchant | undefined) => void;
+  locale: Locale;
+}) {
+  const encoded = value ? `${value.enchantId}:${value.level}` : "none";
+  return (
+    <LabeledSelect
+      id={id}
+      label={t("statsDamageEnchantLabel", locale)}
+      value={encoded}
+      onChange={(e) => {
+        if (e.target.value === "none") {
+          onChange(undefined);
+          return;
+        }
+        const [enchantId, levelStr] = e.target.value.split(":");
+        onChange({ enchantId: enchantId as ProtectionEnchantId, level: Number(levelStr) });
+      }}
+      fullWidth
+    >
+      <option value="none">{t("noneOption", locale)}</option>
+      {PROTECTION_ENCHANT_IDS.map((enchantId) =>
+        Array.from({ length: enchantmentById(enchantId).maxLevel }, (_, i) => i + 1).map((lvl) => (
+          <option key={`${enchantId}:${lvl}`} value={`${enchantId}:${lvl}`}>
+            {enchantmentName(enchantId, locale)} {lvl}
+          </option>
+        ))
+      )}
+    </LabeledSelect>
+  );
+}
+
 export default function StatsMode() {
   const { locale } = useLocale();
 
@@ -87,6 +146,7 @@ export default function StatsMode() {
   const [toolMaterial, setToolMaterial] = useState<Material>("diamond");
   const [efficiencyLevel, setEfficiencyLevel] = useState(5);
   const [armor, setArmor] = useState<ArmorLoadout>({});
+  const [armorProtection, setArmorProtection] = useState<Partial<Record<ArmorSlot, ArmorPieceEnchant>>>({});
   const [username, setUsername] = useState("");
   const [skinCaption, setSkinCaption] = useState<string | null>(null);
 
@@ -237,6 +297,23 @@ export default function StatsMode() {
   const durabilitySave = unbreakingSaveChance(unbreakingLevel);
 
   const miningSpeed = efficiencySpeedMultiplier(toolBaseSpeed(toolMaterial), efficiencyLevel);
+
+  // Sum armor points across whichever of the 4 slots are actually
+  // equipped -- an empty slot contributes 0/0, same as having nothing on.
+  const ARMOR_SLOTS: ArmorSlot[] = ["helmet", "chestplate", "leggings", "boots"];
+  const totalArmorPoints = ARMOR_SLOTS.reduce(
+    (sum, slot) => sum + (armor[slot] ? armorPiecePoints(slot, armor[slot]!).armor : 0),
+    0
+  );
+  const armorReduction = armorReductionTypicalPercent(totalArmorPoints);
+  const DAMAGE_TYPES: DamageType[] = ["generic", "fire", "blast", "projectile"];
+  const protectionPieces = ARMOR_SLOTS.map((slot) => armorProtection[slot]);
+  const finalReductionByType = Object.fromEntries(
+    DAMAGE_TYPES.map((type) => {
+      const epf = totalEpf(protectionPieces, type);
+      return [type, combinedReductionPercent(armorReduction, epfReductionPercent(epf))];
+    })
+  ) as Record<DamageType, number>;
 
   const TARGET_LABEL: Record<string, string> = {
     generic: t("statsTargetGeneric", locale),
@@ -407,35 +484,67 @@ export default function StatsMode() {
             </LabeledSelect>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <ArmorSlotSelect
-              id="stats-helmet-select"
-              category="helmet"
-              value={armor.helmet}
-              onChange={(m) => setArmor((a) => ({ ...a, helmet: m }))}
-              locale={locale}
-            />
-            <ArmorSlotSelect
-              id="stats-chestplate-select"
-              category="chestplate"
-              value={armor.chestplate}
-              onChange={(m) => setArmor((a) => ({ ...a, chestplate: m }))}
-              locale={locale}
-            />
-            <ArmorSlotSelect
-              id="stats-leggings-select"
-              category="leggings"
-              value={armor.leggings}
-              onChange={(m) => setArmor((a) => ({ ...a, leggings: m }))}
-              locale={locale}
-            />
-            <ArmorSlotSelect
-              id="stats-boots-select"
-              category="boots"
-              value={armor.boots}
-              onChange={(m) => setArmor((a) => ({ ...a, boots: m }))}
-              locale={locale}
-            />
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <ArmorSlotSelect
+                id="stats-helmet-select"
+                category="helmet"
+                value={armor.helmet}
+                onChange={(m) => setArmor((a) => ({ ...a, helmet: m }))}
+                locale={locale}
+              />
+              <ArmorProtectionSelect
+                id="stats-helmet-protection-select"
+                value={armorProtection.helmet}
+                onChange={(v) => setArmorProtection((a) => ({ ...a, helmet: v }))}
+                locale={locale}
+              />
+            </div>
+            <div className="space-y-2">
+              <ArmorSlotSelect
+                id="stats-chestplate-select"
+                category="chestplate"
+                value={armor.chestplate}
+                onChange={(m) => setArmor((a) => ({ ...a, chestplate: m }))}
+                locale={locale}
+              />
+              <ArmorProtectionSelect
+                id="stats-chestplate-protection-select"
+                value={armorProtection.chestplate}
+                onChange={(v) => setArmorProtection((a) => ({ ...a, chestplate: v }))}
+                locale={locale}
+              />
+            </div>
+            <div className="space-y-2">
+              <ArmorSlotSelect
+                id="stats-leggings-select"
+                category="leggings"
+                value={armor.leggings}
+                onChange={(m) => setArmor((a) => ({ ...a, leggings: m }))}
+                locale={locale}
+              />
+              <ArmorProtectionSelect
+                id="stats-leggings-protection-select"
+                value={armorProtection.leggings}
+                onChange={(v) => setArmorProtection((a) => ({ ...a, leggings: v }))}
+                locale={locale}
+              />
+            </div>
+            <div className="space-y-2">
+              <ArmorSlotSelect
+                id="stats-boots-select"
+                category="boots"
+                value={armor.boots}
+                onChange={(m) => setArmor((a) => ({ ...a, boots: m }))}
+                locale={locale}
+              />
+              <ArmorProtectionSelect
+                id="stats-boots-protection-select"
+                value={armorProtection.boots}
+                onChange={(v) => setArmorProtection((a) => ({ ...a, boots: v }))}
+                locale={locale}
+              />
+            </div>
           </div>
           <div className="mt-3">
             <ComingSoonSlot label={t("statsOffhandSlotLabel", locale)} />
@@ -497,6 +606,21 @@ export default function StatsMode() {
           ))}
         </div>
         <p className="mt-3 text-xs text-muted">{t("statsBreakTimeNote", locale)}</p>
+      </section>
+
+      <section className="panel mt-4 p-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">{t("statsArmorHeader", locale)}</h2>
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {DAMAGE_TYPES.map((type) => (
+            <div key={type} className="rounded-lg bg-[var(--surface-raised)] p-3">
+              <div className="text-xs text-muted">{damageTypeLabel(type, locale)}</div>
+              <div className="font-display accent-text mt-1 text-2xl font-bold">
+                {finalReductionByType[type].toFixed(0)}%
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-xs text-muted">{t("statsArmorNote", locale)}</p>
       </section>
     </div>
   );

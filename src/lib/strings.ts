@@ -55,6 +55,15 @@ const UI = {
   blockDiamondOre: { en: "Diamond Ore", fr: "Minerai de diamant" },
   blockObsidian: { en: "Obsidian", fr: "Obsidienne" },
   statsOffhandSlotLabel: { en: "Offhand", fr: "Deuxième main" },
+  statsArmorHeader: { en: "Armor (typical hit)", fr: "Armure (coup typique)" },
+  statsArmorNote: {
+    en: "Combines armor points + toughness with Protection's Enchantment Protection Factor (EPF), both verified verbatim against the game's own mechanics page. Shown for a small/typical hit — a big enough hit gets less benefit from armor points (though Protection's own share stays the same); see PROJECT.md.",
+    fr: "Combine points d'armure + ténacité avec le facteur de protection d'enchantement (EPF) de Protection, tous deux vérifiés mot pour mot contre la page de mécaniques du jeu. Montré pour un coup petit/typique — un coup assez gros profite moins des points d'armure (mais la part de Protection reste la même); voir PROJECT.md.",
+  },
+  damageTypeGeneric: { en: "Generic", fr: "Générique" },
+  damageTypeFire: { en: "Fire", fr: "Feu" },
+  damageTypeBlast: { en: "Blast", fr: "Explosion" },
+  damageTypeProjectile: { en: "Projectile", fr: "Projectile" },
 
   statsResultsHeader: { en: "Statistics (real calculation)", fr: "Statistiques (calcul réel)" },
   statsDamagePerHitLabel: { en: "Damage per hit", fr: "Dégâts par coup" },
@@ -285,6 +294,18 @@ const BLOCK_KEY: Record<string, UiKey> = {
 /** Locale text for a reference block id (see miningStats.ts's REFERENCE_BLOCKS). */
 export function blockLabel(blockId: string, locale: Locale): string {
   return BLOCK_KEY[blockId] ? t(BLOCK_KEY[blockId], locale) : blockId;
+}
+
+const DAMAGE_TYPE_KEY: Record<string, UiKey> = {
+  generic: "damageTypeGeneric",
+  fire: "damageTypeFire",
+  blast: "damageTypeBlast",
+  projectile: "damageTypeProjectile",
+};
+
+/** Locale text for a damage type (see armorStats.ts's DamageType). */
+export function damageTypeLabel(damageType: string, locale: Locale): string {
+  return t(DAMAGE_TYPE_KEY[damageType] ?? "damageTypeGeneric", locale);
 }
 
 /** "≈4 attempts on average" / "essentially never at this level" for an Infinity (zero-probability) case. */

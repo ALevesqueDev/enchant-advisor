@@ -36,11 +36,17 @@ import type { Locale } from "./i18n";
  */
 const TRADEABLE_TREASURE_ADDITIONS = ["mending", "frost_walker", "binding_curse", "vanishing_curse"];
 
-/** The actual `tradeable` / `on_random_loot` tag membership: every non-treasure enchantment plus the four additions above. */
-function tradeableAndLootPool() {
-  const additions = ENCHANTMENTS.filter((e) => TRADEABLE_TREASURE_ADDITIONS.includes(e.id));
-  return [...nonTreasurePool(), ...additions];
-}
+/**
+ * The actual `tradeable` / `on_random_loot` tag membership: every
+ * non-treasure enchantment plus the four additions above. Computed once at
+ * module load rather than rebuilt on every treasureOdds() call — it takes
+ * no arguments and ENCHANTMENTS never changes at runtime, so there's
+ * nothing to recompute.
+ */
+const TRADEABLE_AND_LOOT_POOL = [
+  ...nonTreasurePool(),
+  ...ENCHANTMENTS.filter((e) => TRADEABLE_TREASURE_ADDITIONS.includes(e.id)),
+];
 
 /** Plain data only — no rendered text. See the locale-bug note above for why. */
 export type TreasureOddsResult =
@@ -112,7 +118,7 @@ export function treasureOdds(enchantId: string, targetLevel: number, luckOfTheSe
     return results;
   }
 
-  const pool = tradeableAndLootPool();
+  const pool = TRADEABLE_AND_LOOT_POOL;
 
   // --- Villager trading: uniform random pick among the tradeable pool ---
   const poolSize = pool.length;

@@ -717,3 +717,61 @@ re-run 30× with zero failures before trusting it.
 Bumped to v1.7.0 (new user-facing feature; the test-flakiness fix rides
 along rather than getting its own patch release, since it never shipped
 as a visible bug — only as an occasional CI flake).
+
+## Repo cleanup + architecture polish (2026-09-13, no version bump)
+
+Two follow-up passes, both zero-behavior-change so neither earned a semver
+bump per the versioning policy below:
+
+**Repo cleanup**: removed `file.svg`/`globe.svg`/`next.svg`/`vercel.svg`/
+`window.svg` — leftover `create-next-app` scaffold icons, confirmed
+unreferenced anywhere before deleting. Tidied `.gitignore` (added
+Windows/editor cruft patterns, removed a duplicated block).
+
+**Architecture polish** (`mattpocock-skills:improve-codebase-architecture`,
+adapted for an unattended pass — no user available to pick a candidate
+interactively, so this stuck to fixes clear-cut enough not to need one):
+exploration found the codebase already in good shape (unsurprising, since
+it's been built under `codebase-design` discipline all session) — no deep
+"shallow module" restructuring candidates, just a handful of concrete,
+independently-verifiable fixes:
+
+- **`enchantmentById()`**: O(n) `.find()` over `ENCHANTMENTS` on every
+  call → a `Map` built once at module load. One of the most-called
+  functions in the codebase (recommend.ts, anvil.ts, bestMethod.ts,
+  treasure.ts, both page components); n≈40 makes the raw speed difference
+  unmeasurable, but O(1)-by-id-lookup is the right shape regardless.
+- **`treasure.ts`'s trading/loot pool**: was a zero-argument function
+  rebuilt on every `treasureOdds()` call despite being 100% deterministic
+  (pure function of static data) — hoisted to a module-level constant
+  computed once.
+- **`page.tsx`'s defeated memoization**: `anvilTargets` was a fresh
+  `.filter().map()` array on every render, which silently defeated
+  `anvilPlan`'s own `useMemo([anvilTargets])` — a new array reference
+  every time meant it recomputed on every render regardless of whether
+  `recommendations` had actually changed. `currentLevelByEnchant`,
+  `stepsWithBuildUp`, and `shoppingList` had the same gap. All four now
+  wrapped in `useMemo` with correct dependencies, restoring the
+  memoization chain's actual intent (the cost involved is trivial either
+  way — this is a correctness-of-intent fix, not a real bottleneck).
+- **`STATUS_LABEL`/`STATUS_STYLE`**: were inline `Record` objects
+  reallocated in `page.tsx` on every render. Extracted following the
+  pattern `presentation.ts`'s `RARITY_KEY`/`rarityLabel`/`RARITY_VAR`
+  already established for the exact same shape of problem (rarity, not
+  status) — `statusLabel()` joins `strings.ts`, `STATUS_STYLE` joins
+  `presentation.ts`.
+- **`.panel-raised`**: dead CSS class, confirmed via grep to be applied
+  nowhere in any component, removed from both the light and print rules
+  in `globals.css`.
+
+**Verification**: full lint/test/build/e2e suite green, plus a one-off
+Playwright visual-regression harness (not committed — lives only in the
+session's scratchpad) that screenshotted Advisor and Search mode at
+mobile/desktop widths before and after every change and diffed them
+pixel-by-pixel. First run produced a false-positive diff from Search
+mode's own Monte-Carlo randomness (different runs roll different
+percentages, unrelated to the code change); fixed by seeding
+`Math.random()` with a fixed LCG via `page.addInitScript()` before each
+capture so both runs see byte-identical "random" numbers. With that,
+before/after came back pixel-identical (`maxDiffPixelRatio: 0` at every
+viewport) — confirming all five changes are genuinely invisible.

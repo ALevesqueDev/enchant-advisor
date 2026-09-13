@@ -34,6 +34,14 @@ export const RARITY_VAR: Record<Rarity, string> = {
   epic: "--rarity-epic",
 };
 
+/** Tailwind classes for a recommendation's status badge (see recommend.ts's Recommendation["status"]). */
+export const STATUS_STYLE: Record<string, string> = {
+  add: "bg-[var(--status-add-bg)] text-[var(--status-add-fg)]",
+  upgrade: "bg-[var(--status-upgrade-bg)] text-[var(--status-upgrade-fg)]",
+  "already-optimal": "bg-[var(--status-neutral-bg)] text-[var(--status-neutral-fg)]",
+  conflict: "bg-[var(--status-conflict-bg)] text-[var(--status-conflict-fg)]",
+};
+
 export const CATEGORY_ICON: Record<ItemCategory, string> = {
   pickaxe: "⛏️",
   shovel: "🔨",

@@ -138,8 +138,14 @@ function deriveIncompatibilities(id: string): string[] {
 
 export const ENCHANTMENTS: Enchantment[] = RAW.map((e) => ({ ...e, incompatibleWith: deriveIncompatibilities(e.id) }));
 
+// enchantmentById() is one of the most-called functions in the codebase
+// (recommend.ts, anvil.ts, bestMethod.ts, treasure.ts, both page.tsx and
+// SearchMode.tsx) — a Map built once here beats an O(n) .find() rescan of
+// ENCHANTMENTS on every single call.
+const ENCHANTMENTS_BY_ID = new Map(ENCHANTMENTS.map((e) => [e.id, e]));
+
 export function enchantmentById(id: string): Enchantment {
-  const e = ENCHANTMENTS.find((x) => x.id === id);
+  const e = ENCHANTMENTS_BY_ID.get(id);
   if (!e) throw new Error(`Unknown enchantment id: ${id}`);
   return e;
 }

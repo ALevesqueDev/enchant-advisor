@@ -112,10 +112,6 @@ html {
   border-radius: 0.9rem;
 }
 
-.panel-raised {
-  background: var(--surface-raised);
-}
-
 /* Enchanted-item shimmer — a diagonal band of light sweeping across the
    element, like the glint on an enchanted Minecraft item. Used sparingly:
    the primary CTA and the #1 ranked result. */
@@ -228,8 +224,7 @@ html {
     display: none !important;
   }
 
-  .panel,
-  .panel-raised {
+  .panel {
     background: #fff !important;
     border: 1px solid #ccc !important;
     box-shadow: none !important;

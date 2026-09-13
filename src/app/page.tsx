@@ -6,10 +6,10 @@ import { GOALS } from "@/lib/goals";
 import { recommend, untouchedCurrentEnchants } from "@/lib/recommend";
 import { planAnvilCombines, planBuildUp, summarizeShoppingList } from "@/lib/anvil";
 import { computeBestMethods, type RankedMethod, type MethodDetail } from "@/lib/bestMethod";
-import { CATEGORY_ICON, rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
+import { CATEGORY_ICON, STATUS_STYLE, rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
 import { enchantmentName, itemName, bareItemName, LOCALE_LABELS, type Locale } from "@/lib/i18n";
 import { materialsFor, type Material } from "@/lib/materials";
-import { t, blockedByNote, levelTargetNote, slotLabel, methodLabel, expectedAttemptsNote } from "@/lib/strings";
+import { t, blockedByNote, levelTargetNote, slotLabel, methodLabel, statusLabel, expectedAttemptsNote } from "@/lib/strings";
 import { encodeHave, readShareParams, patchShareParams } from "@/lib/shareLink";
 import { useLocale } from "./LocaleContext";
 import { advisorReducer, initialAdvisorState, CATEGORIES } from "./advisorState";
@@ -150,45 +150,46 @@ export default function Home() {
   const goals = GOALS[category];
   const goal = goals.find((g) => g.id === goalId) ?? goals[0];
 
-  const STATUS_LABEL: Record<string, string> = {
-    add: t("statusAdd", locale),
-    upgrade: t("statusUpgrade", locale),
-    "already-optimal": t("statusOptimal", locale),
-    conflict: t("statusConflict", locale),
-  };
-  const STATUS_STYLE: Record<string, string> = {
-    add: "bg-[var(--status-add-bg)] text-[var(--status-add-fg)]",
-    upgrade: "bg-[var(--status-upgrade-bg)] text-[var(--status-upgrade-fg)]",
-    "already-optimal": "bg-[var(--status-neutral-bg)] text-[var(--status-neutral-fg)]",
-    conflict: "bg-[var(--status-conflict-bg)] text-[var(--status-conflict-fg)]",
-  };
-
   const materialOptions = materialsFor(category);
 
   const recommendations = useMemo(() => recommend(current, goal), [current, goal]);
   const untouched = useMemo(() => untouchedCurrentEnchants(current, goal), [current, goal]);
 
-  const anvilTargets = recommendations
-    .filter((r) => r.status === "add" || r.status === "upgrade")
-    .map((r) => ({ id: r.enchantId, level: r.targetLevel }));
+  // Memoized on `recommendations` (not left as a plain per-render
+  // computation) specifically so it has a STABLE reference between renders
+  // when recommendations itself hasn't changed -- anvilPlan's own useMemo
+  // below depends on this array, and an unmemoized filter+map here would
+  // silently defeat that memoization by handing it a "new" array (by
+  // reference) on every render even when nothing actually changed.
+  const anvilTargets = useMemo(
+    () => recommendations.filter((r) => r.status === "add" || r.status === "upgrade").map((r) => ({ id: r.enchantId, level: r.targetLevel })),
+    [recommendations]
+  );
   const anvilPlan = useMemo(() => planAnvilCombines(anvilTargets), [anvilTargets]);
-  const currentLevelByEnchant = new Map(recommendations.map((r) => [r.enchantId, r.currentLevel]));
+  const currentLevelByEnchant = useMemo(
+    () => new Map(recommendations.map((r) => [r.enchantId, r.currentLevel])),
+    [recommendations]
+  );
 
   // Computed once here (rather than inline per-row in the JSX below) so
   // the per-row display and the grand-total summary read from the exact
   // same numbers instead of two separate calls that could drift apart.
-  const stepsWithBuildUp = anvilPlan.steps.map((s) => {
-    const enchant = enchantmentById(s.enchantId);
-    const buildUp = planBuildUp(enchant.anvilCost, currentLevelByEnchant.get(s.enchantId) ?? 0, s.level);
-    return { step: s, buildUp };
-  });
+  const stepsWithBuildUp = useMemo(
+    () =>
+      anvilPlan.steps.map((s) => {
+        const enchant = enchantmentById(s.enchantId);
+        const buildUp = planBuildUp(enchant.anvilCost, currentLevelByEnchant.get(s.enchantId) ?? 0, s.level);
+        return { step: s, buildUp };
+      }),
+    [anvilPlan, currentLevelByEnchant]
+  );
 
   // Grand total across every recommended enchantment — the per-row numbers
   // already existed, but there was never a single "here's everything
   // you'll need" summary.
-  const shoppingList = summarizeShoppingList(
-    anvilPlan.totalCost,
-    stepsWithBuildUp.map(({ buildUp }) => buildUp)
+  const shoppingList = useMemo(
+    () => summarizeShoppingList(anvilPlan.totalCost, stepsWithBuildUp.map(({ buildUp }) => buildUp)),
+    [anvilPlan, stepsWithBuildUp]
   );
 
   // "How do I get these?" — reuses bestMethod.ts's computeBestMethods (built
@@ -408,7 +409,7 @@ export default function Home() {
                       </div>
                     </div>
                     <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[r.status]}`}>
-                      {STATUS_LABEL[r.status]}
+                      {statusLabel(r.status, locale)}
                     </span>
                   </div>
                 );

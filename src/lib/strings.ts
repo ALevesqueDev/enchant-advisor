@@ -204,6 +204,18 @@ export function methodLabel(kind: MethodKind, locale: Locale): string {
   return t(METHOD_KEY[kind], locale);
 }
 
+const STATUS_KEY: Record<string, UiKey> = {
+  add: "statusAdd",
+  upgrade: "statusUpgrade",
+  "already-optimal": "statusOptimal",
+  conflict: "statusConflict",
+};
+
+/** Locale text for a recommendation's status (see recommend.ts's Recommendation["status"]). */
+export function statusLabel(status: string, locale: Locale): string {
+  return t(STATUS_KEY[status] ?? "statusOptimal", locale);
+}
+
 /** "≈4 attempts on average" / "essentially never at this level" for an Infinity (zero-probability) case. */
 export function expectedAttemptsNote(expectedAttempts: number, locale: Locale): string {
   if (!Number.isFinite(expectedAttempts)) return t("neverAtThisLevel", locale);

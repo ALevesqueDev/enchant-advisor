@@ -623,3 +623,21 @@ on the root element rather than per-button so every future interactive
 element gets it for free, with the same zero accessibility cost.
 
 Bumped to v1.5.0 (a real, if small, user-facing behavior change).
+
+## Mode toggle alignment (v1.5.1)
+
+Reported by the user as looking "décentré" (off-center). Verified
+visually with a Playwright screenshot (no interactive browser tool this
+session either) before touching anything: on mobile, the hero content
+above the toggle (badge, title, tagline) is explicitly `text-center`,
+but the Conseiller/Recherche toggle itself — an `inline-flex` pill with
+no centering of its own — sat flush left underneath it. Fixed by
+wrapping it in the same `text-center sm:text-left` pattern the hero
+title block already uses, so it's centered on mobile and left-aligned
+on wider screens, consistent either way. Confirmed with before/after
+screenshots at both breakpoints, and a permanent e2e regression test
+(`e2e/responsive.spec.ts`) checking the group's horizontal center
+matches the page's on mobile. Also gave the toggle's `role="group"` an
+`aria-label` it was missing (a small accessibility gap surfaced while
+writing a selector for the test that could tell it apart from the
+locale toggle's own `role="group"`).

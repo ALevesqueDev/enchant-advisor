@@ -256,26 +256,33 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Mode toggle */}
-      <div className="no-print panel mt-8 inline-flex gap-1 p-1" role="group">
-        <button
-          onClick={() => setMode("advisor")}
-          aria-pressed={mode === "advisor"}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-            mode === "advisor" ? "accent-gradient text-white shadow-sm" : "text-muted hover:text-foreground"
-          }`}
-        >
-          {t("modeAdvisor", locale)}
-        </button>
-        <button
-          onClick={() => setMode("search")}
-          aria-pressed={mode === "search"}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-            mode === "search" ? "accent-gradient text-white shadow-sm" : "text-muted hover:text-foreground"
-          }`}
-        >
-          {t("modeSearch", locale)}
-        </button>
+      {/* Mode toggle — centered on mobile, left-aligned on wider screens,
+          matching the hero title block's own "text-center sm:text-left"
+          right above it. Without this, the toggle (an inline-flex pill,
+          so it doesn't stretch or center on its own) sat flush left while
+          everything above it was centered on mobile — visually
+          inconsistent, reported as looking "décentré". */}
+      <div className="mt-8 text-center sm:text-left">
+        <div className="no-print panel inline-flex gap-1 p-1" role="group" aria-label="Advisor or Search mode / Mode Conseiller ou Recherche">
+          <button
+            onClick={() => setMode("advisor")}
+            aria-pressed={mode === "advisor"}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+              mode === "advisor" ? "accent-gradient text-white shadow-sm" : "text-muted hover:text-foreground"
+            }`}
+          >
+            {t("modeAdvisor", locale)}
+          </button>
+          <button
+            onClick={() => setMode("search")}
+            aria-pressed={mode === "search"}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+              mode === "search" ? "accent-gradient text-white shadow-sm" : "text-muted hover:text-foreground"
+            }`}
+          >
+            {t("modeSearch", locale)}
+          </button>
+        </div>
       </div>
 
       {mode === "search" && <SearchMode />}

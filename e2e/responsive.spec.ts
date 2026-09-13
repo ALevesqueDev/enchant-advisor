@@ -55,3 +55,25 @@ test("desktop content still caps at max-w-3xl and stays centered", async ({ page
   expect(rect.width).toBeLessThanOrEqual(768 + 1); // max-w-3xl = 48rem = 768px
   expect(Math.abs(rect.left - (1440 - rect.right))).toBeLessThan(2); // centered, not full-bleed
 });
+
+// Regression test for a real user report (2026-09-13): the mode toggle
+// ("Conseiller"/"Recherche d'enchantement") was an inline-flex pill with
+// no centering of its own, so it sat flush left on mobile while
+// everything above it (badge, title, tagline) was explicitly centered --
+// visually inconsistent ("décentré"). Fixed by wrapping it in the same
+// text-center sm:text-left pattern the hero title block already uses.
+test("mode toggle is centered on mobile, matching the hero content above it", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+
+  const { groupCenterX, pageCenterX } = await page.evaluate(() => {
+    // Not [role="group"] alone -- the locale toggle (EN/FR) is also a
+    // role="group" earlier in the DOM.
+    const group = document.querySelector('[role="group"][aria-label*="Advisor or Search"]');
+    if (!group) throw new Error("mode toggle group not found");
+    const r = group.getBoundingClientRect();
+    return { groupCenterX: r.left + r.width / 2, pageCenterX: window.innerWidth / 2 };
+  });
+
+  expect(Math.abs(groupCenterX - pageCenterX)).toBeLessThan(2);
+});

@@ -28,6 +28,10 @@
 
 # misc
 .DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
 *.pem
 
 # debug
@@ -52,6 +56,3 @@ next-env.d.ts
 # config, and stays tracked — see its own header comment.)
 CLAUDE.md
 .claude/
-
-.vercel
-.env*

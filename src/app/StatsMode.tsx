@@ -159,9 +159,21 @@ export default function StatsMode() {
     );
   }
 
+  // Real per-enchant category data (enchantments.ts) -- Sweeping Edge is
+  // sword-only, Fire Aspect is sword+mace-only, neither works on an axe in
+  // the real game. Bug caught by a real user report: switching sword to
+  // axe left both selects showing regardless. Damage enchants
+  // (Sharpness/Smite/Bane) don't need this check -- all of COMBAT_BLADES
+  // (sword/axe/mace/spear) supports them.
+  function weaponHas(enchantId: string): boolean {
+    return enchantmentById(enchantId).categories.includes(weapon);
+  }
+
   function changeWeapon(w: MeleeWeapon) {
     setWeapon(w);
     if (!materialsFor(w).includes(material)) setMaterial(materialsFor(w)[0]);
+    if (!enchantmentById("sweeping_edge").categories.includes(w)) setSweepLevel(0);
+    if (!enchantmentById("fire_aspect").categories.includes(w)) setFireLevel(0);
   }
 
   const base = weaponBaseStats(weapon, material);
@@ -271,30 +283,34 @@ export default function StatsMode() {
           </div>
 
           <div className="mt-3 flex flex-wrap gap-3">
-            <LabeledSelect
-              id="stats-sweep-select"
-              label={t("statsSweepingEdgeLabel", locale)}
-              value={sweepLevel}
-              onChange={(e) => setSweepLevel(Number(e.target.value))}
-            >
-              {Array.from({ length: enchantmentById("sweeping_edge").maxLevel + 1 }, (_, i) => i).map((lvl) => (
-                <option key={lvl} value={lvl}>
-                  {lvl === 0 ? t("noneOption", locale) : lvl}
-                </option>
-              ))}
-            </LabeledSelect>
-            <LabeledSelect
-              id="stats-fire-select"
-              label={t("statsFireAspectLabel", locale)}
-              value={fireLevel}
-              onChange={(e) => setFireLevel(Number(e.target.value))}
-            >
-              {Array.from({ length: enchantmentById("fire_aspect").maxLevel + 1 }, (_, i) => i).map((lvl) => (
-                <option key={lvl} value={lvl}>
-                  {lvl === 0 ? t("noneOption", locale) : lvl}
-                </option>
-              ))}
-            </LabeledSelect>
+            {weaponHas("sweeping_edge") && (
+              <LabeledSelect
+                id="stats-sweep-select"
+                label={t("statsSweepingEdgeLabel", locale)}
+                value={sweepLevel}
+                onChange={(e) => setSweepLevel(Number(e.target.value))}
+              >
+                {Array.from({ length: enchantmentById("sweeping_edge").maxLevel + 1 }, (_, i) => i).map((lvl) => (
+                  <option key={lvl} value={lvl}>
+                    {lvl === 0 ? t("noneOption", locale) : lvl}
+                  </option>
+                ))}
+              </LabeledSelect>
+            )}
+            {weaponHas("fire_aspect") && (
+              <LabeledSelect
+                id="stats-fire-select"
+                label={t("statsFireAspectLabel", locale)}
+                value={fireLevel}
+                onChange={(e) => setFireLevel(Number(e.target.value))}
+              >
+                {Array.from({ length: enchantmentById("fire_aspect").maxLevel + 1 }, (_, i) => i).map((lvl) => (
+                  <option key={lvl} value={lvl}>
+                    {lvl === 0 ? t("noneOption", locale) : lvl}
+                  </option>
+                ))}
+              </LabeledSelect>
+            )}
             <LabeledSelect
               id="stats-unbreaking-select"
               label={t("statsUnbreakingLabel", locale)}

@@ -151,3 +151,21 @@ test("stats mode computes live damage and stays overflow-free on mobile", async 
   }));
   expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
 });
+
+// Regression test for a real user report (2026-09-13): switching the
+// weapon from sword to axe left Sweeping Edge and Fire Aspect selectable,
+// even though both are sword-only in the real game (enchantments.ts's own
+// CURATION data) -- axes never showed a different enchant list at all.
+test("stats mode hides sword-only enchants when the weapon is switched to axe", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Calculateur de statistiques" }).click();
+  await page.getByText("Dégâts par coup").waitFor();
+
+  await expect(page.locator("#stats-sweep-select")).toBeVisible();
+  await expect(page.locator("#stats-fire-select")).toBeVisible();
+
+  await page.locator("#stats-weapon-select").selectOption("axe");
+
+  await expect(page.locator("#stats-sweep-select")).toHaveCount(0);
+  await expect(page.locator("#stats-fire-select")).toHaveCount(0);
+});

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { enchantmentById } from "@/lib/enchantments";
 import { materialsFor, type Material } from "@/lib/materials";
 import { enchantmentName, itemName, bareItemName } from "@/lib/i18n";
-import { t } from "@/lib/strings";
+import { t, blockLabel } from "@/lib/strings";
 import {
   weaponBaseStats,
   computeMeleeDamage,
@@ -14,6 +14,7 @@ import {
   DAMAGE_ENCHANT_IDS,
   type MeleeWeapon,
 } from "@/lib/weaponStats";
+import { toolBaseSpeed, efficiencySpeedMultiplier, breakTimeSeconds, REFERENCE_BLOCKS } from "@/lib/miningStats";
 import { useLocale } from "./LocaleContext";
 import LabeledSelect from "./LabeledSelect";
 import { buildCharacterSkin, type ArmorLoadout } from "./characterSkin";
@@ -83,6 +84,8 @@ export default function StatsMode() {
   const [sweepLevel, setSweepLevel] = useState(0);
   const [fireLevel, setFireLevel] = useState(0);
   const [unbreakingLevel, setUnbreakingLevel] = useState(0);
+  const [toolMaterial, setToolMaterial] = useState<Material>("diamond");
+  const [efficiencyLevel, setEfficiencyLevel] = useState(5);
   const [armor, setArmor] = useState<ArmorLoadout>({});
   const [username, setUsername] = useState("");
   const [skinCaption, setSkinCaption] = useState<string | null>(null);
@@ -233,6 +236,8 @@ export default function StatsMode() {
   const burn = fireAspectSeconds(fireLevel);
   const durabilitySave = unbreakingSaveChance(unbreakingLevel);
 
+  const miningSpeed = efficiencySpeedMultiplier(toolBaseSpeed(toolMaterial), efficiencyLevel);
+
   const TARGET_LABEL: Record<string, string> = {
     generic: t("statsTargetGeneric", locale),
     undead: t("statsTargetUndead", locale),
@@ -375,6 +380,33 @@ export default function StatsMode() {
             </LabeledSelect>
           </div>
 
+          <div className="mt-3 flex flex-wrap gap-3 border-t border-[var(--surface-border)] pt-3">
+            <LabeledSelect
+              id="stats-tool-material-select"
+              label={`${t("statsToolSlotLabel", locale)} (${bareItemName("pickaxe", locale)})`}
+              value={toolMaterial}
+              onChange={(e) => setToolMaterial(e.target.value as Material)}
+            >
+              {materialsFor("pickaxe").map((m) => (
+                <option key={m} value={m}>
+                  {itemName("pickaxe", m, locale)}
+                </option>
+              ))}
+            </LabeledSelect>
+            <LabeledSelect
+              id="stats-efficiency-select"
+              label={t("statsEfficiencyLabel", locale)}
+              value={efficiencyLevel}
+              onChange={(e) => setEfficiencyLevel(Number(e.target.value))}
+            >
+              {Array.from({ length: enchantmentById("efficiency").maxLevel + 1 }, (_, i) => i).map((lvl) => (
+                <option key={lvl} value={lvl}>
+                  {lvl === 0 ? t("noneOption", locale) : lvl}
+                </option>
+              ))}
+            </LabeledSelect>
+          </div>
+
           <div className="mt-4 grid grid-cols-2 gap-3">
             <ArmorSlotSelect
               id="stats-helmet-select"
@@ -449,6 +481,22 @@ export default function StatsMode() {
         </div>
         <p className="mt-3 text-xs text-muted">{t("statsDpsNote", locale)}</p>
         <p className="mt-2 text-xs text-[var(--status-add-fg)]">{t("statsVerifiedTag", locale)}</p>
+      </section>
+
+      <section className="panel mt-4 p-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">{t("statsMiningHeader", locale)}</h2>
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {REFERENCE_BLOCKS.map((block) => (
+            <div key={block.id} className="rounded-lg bg-[var(--surface-raised)] p-3">
+              <div className="text-xs text-muted">{blockLabel(block.id, locale)}</div>
+              <div className="font-display accent-text mt-1 text-2xl font-bold">
+                {breakTimeSeconds(miningSpeed, block.hardness).toFixed(2)}
+                {t("statsSecondsSuffix", locale)}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-xs text-muted">{t("statsBreakTimeNote", locale)}</p>
       </section>
     </div>
   );

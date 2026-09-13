@@ -45,6 +45,15 @@ const UI = {
   statsUnbreakingLabel: { en: "Unbreaking", fr: "Solidité" },
   statsComingSoonBadge: { en: "Coming soon", fr: "Bientôt" },
   statsToolSlotLabel: { en: "Tool", fr: "Outil" },
+  statsMiningHeader: { en: "Mining speed", fr: "Vitesse de minage" },
+  statsEfficiencyLabel: { en: "Efficiency", fr: "Efficacité" },
+  statsBreakTimeNote: {
+    en: "Break time on a few reference blocks, standing still on solid ground with no Haste/potion effects. Block hardness values are wiki-sourced (no raw-data source exists for them); the speed formula itself is verified against the game's own mechanics page.",
+    fr: "Temps pour casser quelques blocs de référence, immobile au sol sans effet de Hâte/potion. Les valeurs de dureté de bloc viennent du wiki (aucune source de données brutes n'existe pour ça); la formule de vitesse elle-même est vérifiée contre la page de mécaniques du jeu.",
+  },
+  blockStone: { en: "Stone", fr: "Pierre" },
+  blockDiamondOre: { en: "Diamond Ore", fr: "Minerai de diamant" },
+  blockObsidian: { en: "Obsidian", fr: "Obsidienne" },
   statsOffhandSlotLabel: { en: "Offhand", fr: "Deuxième main" },
 
   statsResultsHeader: { en: "Statistics (real calculation)", fr: "Statistiques (calcul réel)" },
@@ -265,6 +274,17 @@ const STATUS_KEY: Record<string, UiKey> = {
 /** Locale text for a recommendation's status (see recommend.ts's Recommendation["status"]). */
 export function statusLabel(status: string, locale: Locale): string {
   return t(STATUS_KEY[status] ?? "statusOptimal", locale);
+}
+
+const BLOCK_KEY: Record<string, UiKey> = {
+  stone: "blockStone",
+  diamond_ore: "blockDiamondOre",
+  obsidian: "blockObsidian",
+};
+
+/** Locale text for a reference block id (see miningStats.ts's REFERENCE_BLOCKS). */
+export function blockLabel(blockId: string, locale: Locale): string {
+  return BLOCK_KEY[blockId] ? t(BLOCK_KEY[blockId], locale) : blockId;
 }
 
 /** "≈4 attempts on average" / "essentially never at this level" for an Infinity (zero-probability) case. */

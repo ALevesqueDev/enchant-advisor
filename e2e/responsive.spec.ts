@@ -215,3 +215,22 @@ test("stats mode's skin lookup button changes the caption when clicked", async (
   await page.getByRole("button", { name: "Charger" }).click();
   await expect(caption).not.toHaveText(before ?? "", { timeout: 10000 });
 });
+
+// Regression coverage for the Stats mode's Phase 2 (2026-09-13): mining
+// speed. Drives the real flow -- switch tool material, confirm the
+// displayed break time on the reference blocks actually updates.
+test("stats mode computes live mining break time", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Calculateur de statistiques" }).click();
+  await page.getByText("Vitesse de minage").waitFor();
+
+  const obsidianTime = page.locator("text=Obsidienne").locator("..").locator(".accent-text");
+  const before = await obsidianTime.textContent();
+
+  // Dropping Efficiency from its default (V) to none is a big enough speed
+  // swing to visibly change obsidian's break time even through the
+  // formula's whole-tick rounding (small swings, e.g. just switching
+  // material, can round to the same displayed tick count).
+  await page.locator("#stats-efficiency-select").selectOption("0");
+  await expect(obsidianTime).not.toHaveText(before ?? "");
+});

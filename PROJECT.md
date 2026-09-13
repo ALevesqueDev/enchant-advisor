@@ -937,3 +937,30 @@ region-by-region wouldn't mean the same thing it does on the generic
 construct, so real-skin mode shows the skin as-is.
 
 Bumped to v1.9.0 (new feature).
+
+## Stats Calculator — Phase 2: mining speed (v1.10.0)
+
+`miningStats.ts` — pickaxe slot, all 7 materials, Efficiency 0-5. Full
+break-speed pipeline verified verbatim against
+`minecraft.wiki/w/Mining_efficiency`'s "Calculation" section (fetched via
+the wiki's own MediaWiki API section-by-section to get exact wikitext
+rather than a truncated page render, after the rendered-page fetch cut
+off mid-formula on the first attempt): tool base speed → `+= level²+1`
+if the tool is correct for the block → `damage = speed/hardness` →
+`ticks = ceil(1/damage)`. Haste/Conduit Power/Mining Fatigue/underwater/
+off-ground modifiers are real per the same formula but deliberately not
+modeled -- this covers the single most common case (standing still, on
+solid ground, no status effects), not every situational multiplier.
+
+**One real, confirmed gap, same pattern as elsewhere in this app**:
+block hardness has no source anywhere in `misode/mcmeta` at all --
+verified by downloading and parsing `blocks/data.json` directly (only
+blockstate property defaults, no hardness field) and cross-checking the
+repo's own README, which documents `blocks/` as blockstate data only.
+So `REFERENCE_BLOCKS`' three entries (Stone, Diamond Ore, Obsidian) are
+wiki-sourced, not raw-data-sourced -- flagged in the UI, same honesty
+tier as Luck of the Sea's community-measured bonus. Deliberately a small
+fixed set, not an attempt at a full block database this app has no
+verified source for.
+
+Bumped to v1.10.0 (new feature).

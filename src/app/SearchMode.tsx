@@ -3,7 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { ENCHANTMENTS, enchantmentById } from "@/lib/enchantments";
 import { materialsFor, enchantability, type Material } from "@/lib/materials";
-import { findBestTableOdds, findBestBookOdds, slotLevelRange, type BestTableCombo, type BestBookSlot } from "@/lib/tableOdds";
+import {
+  findBestTableOdds,
+  findBestBookOdds,
+  slotLevelRange,
+  bookshelfCurve,
+  type BestTableCombo,
+  type BestBookSlot,
+  type BookshelfCurvePoint,
+} from "@/lib/tableOdds";
 import { treasureOdds, treasureSourceNote, isStructureLootOnly, type TreasureOddsResult } from "@/lib/treasure";
 import { rankMethods, type RankableMethod, type MethodDetail } from "@/lib/bestMethod";
 import { rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
@@ -13,6 +21,7 @@ import { readShareParams, patchShareParams } from "@/lib/shareLink";
 import { useLocale } from "./LocaleContext";
 import LabeledSelect from "./LabeledSelect";
 import RankedResultsList, { type RankedResultsItem } from "./RankedResultsList";
+import BookshelfCurveChart from "./BookshelfCurveChart";
 import type { ItemCategory } from "@/lib/types";
 
 const SOURCE_ICON: Record<TreasureOddsResult["source"], string> = {
@@ -25,6 +34,7 @@ interface Results {
   table: BestTableCombo[] | null;
   book: BestBookSlot[] | null;
   tradeAndFish: TreasureOddsResult[] | null;
+  curve: BookshelfCurvePoint[] | null;
 }
 
 export default function SearchMode() {
@@ -124,7 +134,7 @@ export default function SearchMode() {
     setResults(null);
     // Let the "calculating" state paint before the synchronous simulation runs.
     setTimeout(() => {
-      const next: Results = { table: null, book: null, tradeAndFish: null };
+      const next: Results = { table: null, book: null, tradeAndFish: null, curve: null };
 
       if (!enchant.treasureOnly) {
         const materials = materialsFor(category);
@@ -134,6 +144,7 @@ export default function SearchMode() {
             : [{ id: "—", enchantability: enchantability(category) }];
         next.table = findBestTableOdds(category, enchantId, level, materialInputs, bookshelves);
         next.book = findBestBookOdds(enchantId, level, bookshelves);
+        next.curve = bookshelfCurve(category, enchantId, level, materialInputs);
       }
 
       if (!structureOnly) {
@@ -291,6 +302,8 @@ export default function SearchMode() {
           <p className="mt-3 text-xs text-muted">{t("searchBestMethodCaveat", locale)}</p>
         </section>
       )}
+
+      {results?.curve && <BookshelfCurveChart points={results.curve} currentBookshelves={bookshelves} locale={locale} />}
 
       {results?.table && (
         <section className="mt-6">

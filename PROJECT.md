@@ -641,3 +641,33 @@ matches the page's on mobile. Also gave the toggle's `role="group"` an
 `aria-label` it was missing (a small accessibility gap surfaced while
 writing a selector for the test that could tell it apart from the
 locale toggle's own `role="group"`).
+
+## Bookshelf-count curve chart (v1.6.0)
+
+"Mega wow" roadmap item 2: Search mode now shows how the best achievable
+table odds change across every bookshelf count 0-15, not just the one
+count the player picked — answering "is it actually worth building more
+bookshelves?" instead of just "what are my odds right now?".
+
+`bookshelfCurve()` (`tableOdds.ts`) sweeps `findBestTableOdds()` at each
+of the 16 counts. Runs at a lower trials-per-point (800 vs the single-
+count lookup's 6000) since the curve's *shape* is what matters here, not
+per-point precision — measured ~82ms for a pickaxe with 7 materials,
+negligible next to the existing calculation. Covered by 3 new tests: the
+16-point shape, a monotonic-non-decreasing check (every bookshelf count's
+achievable level range is a superset of a lower count's, so odds can only
+improve or hold — checked with a 0.05 tolerance for Monte Carlo noise,
+re-run 5× during development to rule out flakiness), and a [0,1] bounds
+check.
+
+`BookshelfCurveChart.tsx` is a hand-rolled 16-bar chart (no charting
+library — 16 bars doesn't justify the dependency weight), highlighting
+the player's current bookshelf count and showing a one-sentence summary
+(`bookshelfCurveSummary()` in `strings.ts`) of the best vs. worst odds in
+the sweep. Gated on `!enchant.treasureOnly`, same as the existing table-
+odds sections, since treasure-only enchants have no table odds to sweep.
+
+Verified with a new Playwright e2e test that actually drives Search mode
+(select an enchant, click Calculate, wait for the chart) rather than just
+loading the static page — the existing overflow tests wouldn't have
+caught a bug introduced only after this chart renders.

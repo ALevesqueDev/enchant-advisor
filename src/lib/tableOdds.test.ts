@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { slotLevelRange } from "./tableOdds";
+import { slotLevelRange, bookshelfCurve } from "./tableOdds";
+import { materialsFor, enchantability } from "./materials";
 
 // slotLevelRange() is the deterministic min/max envelope of the bookshelf
 // formula (rollSlotLevel() re-rolls randomly within it every trial, so it
@@ -33,6 +34,36 @@ describe("slotLevelRange", () => {
         expect(range.min).toBeLessThanOrEqual(range.max);
         expect(range.min).toBeGreaterThanOrEqual(1);
       }
+    }
+  });
+});
+
+describe("bookshelfCurve", () => {
+  const materials = materialsFor("pickaxe").map((m) => ({ id: m, enchantability: enchantability("pickaxe", m) }));
+
+  it("returns exactly one point per bookshelf count, 0 through 15", () => {
+    const curve = bookshelfCurve("pickaxe", "efficiency", 3, materials, 300);
+    expect(curve).toHaveLength(16);
+    expect(curve.map((p) => p.bookshelves)).toEqual(Array.from({ length: 16 }, (_, i) => i));
+  });
+
+  it("is monotonically non-decreasing -- more bookshelves never hurts your odds", () => {
+    // Every bookshelf count's achievable level range is a superset of a
+    // lower count's (see slotLevelRange), so the best achievable
+    // probability can only stay the same or improve. A real regression
+    // in the underlying formula (e.g. bookshelves capped incorrectly)
+    // would show up here as a dip.
+    const curve = bookshelfCurve("pickaxe", "efficiency", 3, materials, 800);
+    for (let i = 1; i < curve.length; i++) {
+      expect(curve[i].probability).toBeGreaterThanOrEqual(curve[i - 1].probability - 0.05); // small Monte-Carlo noise tolerance
+    }
+  });
+
+  it("all probabilities stay within [0, 1]", () => {
+    const curve = bookshelfCurve("pickaxe", "efficiency", 3, materials, 300);
+    for (const point of curve) {
+      expect(point.probability).toBeGreaterThanOrEqual(0);
+      expect(point.probability).toBeLessThanOrEqual(1);
     }
   });
 });

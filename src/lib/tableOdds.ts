@@ -247,6 +247,36 @@ export function findBestTableOdds(
   return results.sort((a, b) => b.probability - a.probability);
 }
 
+export interface BookshelfCurvePoint {
+  bookshelves: number;
+  /** Best probability achievable at this exact bookshelf count (best material × slot combo). */
+  probability: number;
+}
+
+/**
+ * "How much does adding another bookshelf actually help?" — sweeps every
+ * bookshelf count 0-15 (not just the player's current one) and, at each
+ * count, finds the best material × slot combo the same way
+ * findBestTableOdds() does. Lower trial count per point than
+ * findBestTableOdds's own default since this runs that same sweep 16
+ * times over — the curve's shape is what matters here, not the same
+ * precision a single-count lookup wants.
+ */
+export function bookshelfCurve(
+  category: ItemCategory,
+  targetEnchantId: string,
+  targetLevel: number,
+  materials: Array<{ id: string; enchantability: number }>,
+  trialsPerPoint = 800
+): BookshelfCurvePoint[] {
+  const points: BookshelfCurvePoint[] = [];
+  for (let bookshelves = 0; bookshelves <= 15; bookshelves++) {
+    const best = findBestTableOdds(category, targetEnchantId, targetLevel, materials, bookshelves, trialsPerPoint)[0];
+    points.push({ bookshelves, probability: best?.probability ?? 0 });
+  }
+  return points;
+}
+
 export interface BestBookSlot {
   slot: EnchantingSlot;
   probability: number;

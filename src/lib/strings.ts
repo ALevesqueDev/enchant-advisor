@@ -4,7 +4,7 @@
 // anywhere external.
 
 import type { Locale } from "./i18n";
-import type { EnchantingSlot } from "./tableOdds";
+import type { EnchantingSlot, BookshelfCurvePoint } from "./tableOdds";
 import type { MethodKind } from "./bestMethod";
 
 const UI = {
@@ -111,6 +111,13 @@ const UI = {
   sourceTrading: { en: "Trading (librarian)", fr: "Commerce (bibliothécaire)" },
   sourceStructureOnly: { en: "Structure loot only", fr: "Butin de structure uniquement" },
 
+  searchBookshelfCurveHeader: { en: "Is it worth more bookshelves?", fr: "Ça vaut la peine, plus d'étagères?" },
+  searchBookshelfCurveNote: {
+    en: "Best odds at each bookshelf count (0-15), not just the one you picked above — so you can see whether adding more is actually worth it.",
+    fr: "Meilleures chances pour chaque nombre d'étagères (0 à 15), pas juste celui choisi plus haut — pour voir si en ajouter change vraiment quelque chose.",
+  },
+  searchBookshelfCurveAxis: { en: "bookshelves", fr: "étagères" },
+
   searchBestMethodHeader: { en: "Best method", fr: "Meilleure méthode" },
   searchBestMethodCaveat: {
     en: "Ranked by odds per attempt — but an attempt doesn't cost the same everywhere: a table roll spends XP levels and consumes the item/book, a trading reroll costs a lectern plus emeralds, a fishing cast only costs time. Weigh that against the numbers below.",
@@ -197,6 +204,17 @@ export function expectedAttemptsNote(expectedAttempts: number, locale: Locale): 
       ? expectedAttempts.toFixed(1)
       : Math.round(expectedAttempts).toLocaleString(locale === "en" ? "en-US" : "fr-FR");
   return locale === "en" ? `≈${rounded} attempts on average` : `≈${rounded} essais en moyenne`;
+}
+
+/** "Best odds: 62% at 15 bookshelves (vs 8% at 0)." — the one-sentence takeaway from the bookshelf curve, for anyone who won't stop to read the chart itself. */
+export function bookshelfCurveSummary(points: BookshelfCurvePoint[], locale: Locale): string {
+  const best = points.reduce((a, b) => (b.probability > a.probability ? b : a));
+  const worst = points.reduce((a, b) => (b.probability < a.probability ? b : a));
+  const bestPct = (best.probability * 100).toFixed(1);
+  const worstPct = (worst.probability * 100).toFixed(1);
+  return locale === "en"
+    ? `Best odds: ${bestPct}% at ${best.bookshelves} bookshelves (vs ${worstPct}% at ${worst.bookshelves}).`
+    : `Meilleures chances : ${bestPct}% à ${best.bookshelves} étagères (contre ${worstPct}% à ${worst.bookshelves}).`;
 }
 
 export function levelTargetNote(currentLevel: number, targetLevel: number, locale: Locale): string {

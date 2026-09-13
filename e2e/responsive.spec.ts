@@ -77,3 +77,25 @@ test("mode toggle is centered on mobile, matching the hero content above it", as
 
   expect(Math.abs(groupCenterX - pageCenterX)).toBeLessThan(2);
 });
+
+// Regression coverage for the bookshelf-curve chart (2026-09-13): a 16-bar
+// hand-rolled chart is exactly the kind of element that can silently blow
+// out the mobile-overflow fix above it (flex row of 16 items, each with a
+// minimum content width) if it's ever changed. Drives the real
+// Search-mode flow (not just a static page load) so the chart is actually
+// present in the DOM before asserting.
+test("bookshelf curve chart renders without causing mobile overflow", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Recherche d'enchantement" }).click();
+  await page.locator("#search-enchant-select").selectOption("efficiency");
+  await page.getByRole("button", { name: /Calculer/ }).click();
+  await page.getByText("Ça vaut la peine, plus d'étagères?").waitFor();
+
+  const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
+});

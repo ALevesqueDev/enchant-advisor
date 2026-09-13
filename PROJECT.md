@@ -603,3 +603,23 @@ Node) — the gap this closes.
 
 Bumped to v1.4.2 (bug fix; the e2e suite is regression-test
 infrastructure for it, not a new user-facing feature).
+
+## Mobile touch-action (v1.5.0)
+
+Considered and **rejected disabling pinch-zoom** (`maximum-scale=1`/
+`user-scalable=no` in the viewport meta tag) for a more "app-like" mobile
+feel. This is a well-documented WCAG failure (criteria 1.4.4/1.4.10 —
+low-vision users rely on pinch-zoom to read content), well-known enough
+that Safari on iOS has ignored `user-scalable=no` outright since iOS 10.
+Contradicts the accessibility pass already done on this app (item 14
+above) for no real gain.
+
+Instead: `touch-action: manipulation` on `html` in `globals.css`, one
+global rule. Per spec, `manipulation` explicitly keeps pinch-zoom and
+panning — it only drops the non-standard double-tap-to-zoom gesture,
+which is what was actually motivating the "disable zoom" idea (the
+double-tap delay/accidental-zoom annoyance on buttons). Applied globally
+on the root element rather than per-button so every future interactive
+element gets it for free, with the same zero accessibility cost.
+
+Bumped to v1.5.0 (a real, if small, user-facing behavior change).

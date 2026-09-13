@@ -88,6 +88,19 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
+/*
+ * Removes the double-tap-to-zoom delay/gesture on mobile (the "app feel"
+ * a fast tap sequence on buttons deserves) WITHOUT disabling pinch-zoom —
+ * unlike `user-scalable=no`/`maximum-scale=1` in the viewport meta tag,
+ * `manipulation` explicitly keeps pinch-zoom and panning per spec, only
+ * dropping the non-standard double-tap gesture. Global on `html` rather
+ * than per-button so every future interactive element gets it for free.
+ * Disabling zoom outright was considered and rejected — see PROJECT.md.
+ */
+html {
+  touch-action: manipulation;
+}
+
 .font-display {
   font-family: var(--font-display), Georgia, serif;
   letter-spacing: 0.01em;

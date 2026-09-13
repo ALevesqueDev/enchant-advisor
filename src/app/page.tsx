@@ -233,7 +233,7 @@ export default function Home() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <div className="mx-auto w-full min-w-0 max-w-3xl px-4 py-12 sm:px-6">
       <OfflineBanner locale={locale} />
       {/* Hero */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -431,7 +431,7 @@ export default function Home() {
               <p className="mt-2 text-xs text-muted">{t("anvilAssumption", locale)}</p>
 
               <div className="panel mt-3 overflow-x-auto">
-                <table className="w-full min-w-[420px] text-sm">
+                <table className="w-full text-sm">
                   <thead className="text-left text-xs uppercase tracking-wide text-muted">
                     <tr className="border-b border-[var(--surface-border)]">
                       <th className="px-4 py-2.5 font-medium">{t("anvilStep", locale)}</th>

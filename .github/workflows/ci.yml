@@ -27,3 +27,12 @@ jobs:
       - run: npm run test
 
       - run: npm run build
+
+      # e2e/responsive.spec.ts exists because a real, long-standing mobile
+      # overflow bug (see PROJECT.md) slipped past lint/test/build entirely
+      # -- none of them render a real DOM/CSS box model. Only chromium is
+      # installed since that's the only project configured (see
+      # playwright.config.ts).
+      - run: npx playwright install --with-deps chromium
+
+      - run: npm run test:e2e

@@ -13,5 +13,9 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // e2e/*.spec.ts are Playwright tests (npm run test:e2e) — Vitest's
+    // default include glob matches *.spec.ts too, and picking them up
+    // here crashes since Playwright's test() API isn't Vitest's.
+    exclude: ["**/node_modules/**", "e2e/**"],
   },
 });

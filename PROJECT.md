@@ -562,3 +562,44 @@ video (needs a connected browser tool, unavailable this session). The
 user's own existing Minecraft community (the JDL server/LAN party
 players) remains the highest-trust, lowest-effort channel and isn't
 something Claude Code can act on at all.
+
+## Mobile overflow bug + e2e test suite (v1.4.2)
+
+A real user reported the site looking "cropped" on their phone. Diagnosed
+with the `mattpocock-skills:diagnosing-bugs` discipline: no connected
+browser tool this session either, but Playwright's headless Chromium
+(installed on demand, no interactive extension needed) gave a genuine
+Phase-1 feedback loop — measure `document.documentElement.scrollWidth`
+vs `clientWidth` at real mobile viewport widths, which goes red exactly
+when content overflows horizontally.
+
+**Root cause**: the page's root container (`<div className="mx-auto
+max-w-3xl ...">` in `page.tsx`) is a flex item of `<body class="flex
+flex-col">` (the flex-column-body pattern that pins the footer to the
+bottom). `mx-auto` on a flex item makes the browser size it by
+shrink-to-fit — like a plain block with no width set — instead of
+stretching to fill the flex line. Its shrink-to-fit (max-content) width
+came out to ~464px (driven by the widest row rendered on first load,
+the anvil-cost table under the default goal), so on every phone
+narrower than that — every phone — the page overflowed horizontally.
+
+**Two hypotheses tested and falsified before finding it** (per the
+skill's "ranked, falsifiable hypotheses" discipline): adding `min-w-0`
+to the container did nothing (proven by re-running the loop and getting
+identical numbers); removing the anvil table's `min-w-[420px]` did
+nothing either. The actual fix — adding an explicit `w-full` so the
+flex item stretches instead of shrink-to-fitting — was confirmed by
+watching the loop flip from red to green, then re-broken and re-fixed
+once more to prove the test is genuinely red-capable (the skill's
+Phase 2/6 discipline), not just coincidentally passing.
+
+**Now permanent**: `playwright.config.ts` + `e2e/responsive.spec.ts`
+(`npm run test:e2e`), checking horizontal overflow at 3 real phone
+widths plus a desktop-still-centered sanity check, against the actual
+production build (`next build && next start`, not `next dev`). Added
+to `ci.yml` on every push/PR. This is exactly the class of bug Vitest's
+unit tests structurally cannot catch (no real DOM/CSS box model in
+Node) — the gap this closes.
+
+Bumped to v1.4.2 (bug fix; the e2e suite is regression-test
+infrastructure for it, not a new user-facing feature).

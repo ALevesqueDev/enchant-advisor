@@ -16,59 +16,11 @@ import {
 } from "@/lib/weaponStats";
 import { useLocale } from "./LocaleContext";
 import LabeledSelect from "./LabeledSelect";
+import { buildCharacterSkin, type ArmorLoadout } from "./characterSkin";
+import type { Locale } from "@/lib/i18n";
+import type { ItemCategory } from "@/lib/types";
 
 const USERNAME_STORAGE_KEY = "enchant-advisor-mc-username";
-
-/**
- * Draws a small, deliberately original 64x32 "enchanted construct" skin
- * texture (legacy layout -- skinview3d auto-mirrors the left arm/leg from
- * the right, so there's no risk of getting the extended 64x64 format's
- * separate left-side UV offsets wrong). NOT a copy of Steve/Alex or any
- * real skin -- Mojang's usage guidelines restrict redistributing their
- * texture assets, so this is our own recolor in the app's own accent
- * palette instead. Placeholder until real skin-by-username lookup ships.
- */
-function buildPlaceholderSkin(): string {
-  const c = document.createElement("canvas");
-  c.width = 64;
-  c.height = 32;
-  const ctx = c.getContext("2d")!;
-  const ink = "#1a1729",
-    head = "#c4b5fd",
-    torso = "#818cf8",
-    limb = "#22d3ee";
-  ctx.fillStyle = ink;
-  ctx.fillRect(0, 0, 64, 32);
-  const box = (x: number, y: number, w: number, h: number, color: string) => {
-    ctx.fillStyle = color;
-    ctx.fillRect(x, y, w, h);
-  };
-  box(8, 0, 8, 8, head);
-  box(16, 0, 8, 8, head);
-  box(0, 8, 8, 8, head);
-  box(8, 8, 8, 8, head);
-  box(16, 8, 8, 8, head);
-  box(24, 8, 8, 8, head);
-  box(20, 16, 8, 4, torso);
-  box(28, 16, 8, 4, torso);
-  box(16, 20, 4, 12, torso);
-  box(20, 20, 8, 12, torso);
-  box(28, 20, 4, 12, torso);
-  box(32, 20, 8, 12, torso);
-  box(44, 16, 4, 4, limb);
-  box(48, 16, 4, 4, limb);
-  box(40, 20, 4, 12, limb);
-  box(44, 20, 4, 12, limb);
-  box(48, 20, 4, 12, limb);
-  box(52, 20, 4, 12, limb);
-  box(4, 16, 4, 4, ink);
-  box(8, 16, 4, 4, ink);
-  box(0, 20, 4, 12, ink);
-  box(4, 20, 4, 12, ink);
-  box(8, 20, 4, 12, ink);
-  box(12, 20, 4, 12, ink);
-  return c.toDataURL("image/png");
-}
 
 /** Equipment slots not wired up yet -- shown so the full loadout is visible from day one, per the phased plan (each phase adds real stats to a slot already on screen). */
 function ComingSoonSlot({ label }: { label: string }) {
@@ -83,6 +35,44 @@ function ComingSoonSlot({ label }: { label: string }) {
   );
 }
 
+/**
+ * One armor slot's material picker -- affects the 3D character's colors
+ * (characterSkin.ts) immediately, but doesn't compute a real damage-
+ * reduction stat yet (that's Phase 3, pending the dedicated armor-formula
+ * verification pass). "None" is a real option, not just a default: an
+ * empty slot is a legitimate loadout choice, not an unset field.
+ */
+function ArmorSlotSelect({
+  id,
+  category,
+  value,
+  onChange,
+  locale,
+}: {
+  id: string;
+  category: ItemCategory;
+  value: Material | undefined;
+  onChange: (material: Material | undefined) => void;
+  locale: Locale;
+}) {
+  return (
+    <LabeledSelect
+      id={id}
+      label={bareItemName(category, locale)}
+      value={value ?? "none"}
+      onChange={(e) => onChange(e.target.value === "none" ? undefined : (e.target.value as Material))}
+      fullWidth
+    >
+      <option value="none">{t("noneOption", locale)}</option>
+      {materialsFor(category).map((m) => (
+        <option key={m} value={m}>
+          {itemName(category, m, locale)}
+        </option>
+      ))}
+    </LabeledSelect>
+  );
+}
+
 export default function StatsMode() {
   const { locale } = useLocale();
 
@@ -93,6 +83,7 @@ export default function StatsMode() {
   const [sweepLevel, setSweepLevel] = useState(0);
   const [fireLevel, setFireLevel] = useState(0);
   const [unbreakingLevel, setUnbreakingLevel] = useState(0);
+  const [armor, setArmor] = useState<ArmorLoadout>({});
   const [username, setUsername] = useState("");
   const [skinCaption, setSkinCaption] = useState<string | null>(null);
 
@@ -111,10 +102,14 @@ export default function StatsMode() {
   }, []);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const viewerRef = useRef<{ dispose: () => void; loadSkin: (url: string) => Promise<void> | void } | null>(null);
   const [skinFailed, setSkinFailed] = useState(false);
+  // Once a real skin is showing, the armor-recolor effect below backs off --
+  // recoloring someone's actual skin region-by-region wouldn't mean the
+  // same thing our own generic construct's colors do.
+  const [usingRealSkin, setUsingRealSkin] = useState(false);
 
   useEffect(() => {
-    let viewer: { dispose: () => void } | null = null;
     let cancelled = false;
     // Dynamic import (not a top-level import) so this browser-only,
     // canvas/WebGL-dependent library never executes during Next.js's
@@ -126,7 +121,7 @@ export default function StatsMode() {
           canvas: canvasRef.current,
           width: canvasRef.current.clientWidth || 280,
           height: 280,
-          skin: buildPlaceholderSkin(),
+          skin: buildCharacterSkin(armor),
         });
         try {
           created.autoRotate = true;
@@ -135,28 +130,83 @@ export default function StatsMode() {
         } catch {
           // Cosmetic only -- the viewer still works without these.
         }
-        viewer = created;
+        viewerRef.current = created;
       })
       .catch(() => {
         if (!cancelled) setSkinFailed(true);
       });
     return () => {
       cancelled = true;
-      viewer?.dispose();
+      viewerRef.current?.dispose();
+      viewerRef.current = null;
     };
+    // Deliberately mount-only -- the effect below keeps the already-created
+    // viewer's texture in sync with `armor` instead of recreating the
+    // whole viewer (and losing its rotation/camera state) on every change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (usingRealSkin) return;
+    try {
+      viewerRef.current?.loadSkin(buildCharacterSkin(armor));
+    } catch {
+      // Non-fatal -- the character just keeps showing its previous colors.
+    }
+  }, [armor, usingRealSkin]);
+
+  /**
+   * Real skin-by-username lookup. Mojang's own username->UUID and
+   * UUID->profile JSON APIs don't send CORS headers (verified directly
+   * against the live endpoints while scoping this) -- only the final raw
+   * texture file (textures.minecraft.net) is CORS-open, and neither
+   * Mojang host is callable straight from a static site's browser JS.
+   * mc-heads.net does the same username->UUID->profile resolution
+   * server-side and re-serves the raw skin texture with a permissive
+   * Access-Control-Allow-Origin, so /skin/<username> can be handed
+   * directly to skinview3d without this app needing its own backend --
+   * see PROJECT.md for the full sourcing/tradeoff record, including why a
+   * Vercel serverless function was considered and not (yet) chosen.
+   */
   function loadSkin() {
     try {
       localStorage.setItem(USERNAME_STORAGE_KEY, username);
     } catch {
       // Non-fatal -- the choice just won't persist across visits.
     }
-    setSkinCaption(
-      username.trim()
-        ? t("statsSkinCaptionNamed", locale)
-        : t("statsSkinCaptionGeneric", locale)
-    );
+
+    const trimmed = username.trim();
+    if (!trimmed) {
+      setUsingRealSkin(false);
+      setSkinCaption(t("statsSkinCaptionGeneric", locale));
+      return;
+    }
+
+    if (!viewerRef.current) {
+      setSkinCaption(t("statsSkinCaptionFailed", locale));
+      return;
+    }
+
+    setSkinCaption(t("statsSkinLoading", locale));
+    const skinUrl = `https://mc-heads.net/skin/${encodeURIComponent(trimmed)}`;
+    Promise.resolve(viewerRef.current.loadSkin(skinUrl))
+      .then(() => {
+        setUsingRealSkin(true);
+        setSkinCaption(t("statsSkinCaptionReal", locale));
+      })
+      .catch(() => {
+        // Username not found, mc-heads.net unreachable, etc. -- fall back
+        // to the generic construct rather than leaving a broken texture
+        // or blocking the rest of the page (see the "coming soon" plan's
+        // Q15: informative, never blocking).
+        setUsingRealSkin(false);
+        try {
+          viewerRef.current?.loadSkin(buildCharacterSkin(armor));
+        } catch {
+          // Viewer itself is gone -- nothing more to do.
+        }
+        setSkinCaption(t("statsSkinCaptionFailed", locale));
+      });
   }
 
   // Real per-enchant category data (enchantments.ts) -- Sweeping Edge is
@@ -325,11 +375,37 @@ export default function StatsMode() {
             </LabeledSelect>
           </div>
 
-          <div className="mt-4 space-y-2">
-            <ComingSoonSlot label={bareItemName("helmet", locale)} />
-            <ComingSoonSlot label={bareItemName("chestplate", locale)} />
-            <ComingSoonSlot label={bareItemName("leggings", locale)} />
-            <ComingSoonSlot label={bareItemName("boots", locale)} />
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <ArmorSlotSelect
+              id="stats-helmet-select"
+              category="helmet"
+              value={armor.helmet}
+              onChange={(m) => setArmor((a) => ({ ...a, helmet: m }))}
+              locale={locale}
+            />
+            <ArmorSlotSelect
+              id="stats-chestplate-select"
+              category="chestplate"
+              value={armor.chestplate}
+              onChange={(m) => setArmor((a) => ({ ...a, chestplate: m }))}
+              locale={locale}
+            />
+            <ArmorSlotSelect
+              id="stats-leggings-select"
+              category="leggings"
+              value={armor.leggings}
+              onChange={(m) => setArmor((a) => ({ ...a, leggings: m }))}
+              locale={locale}
+            />
+            <ArmorSlotSelect
+              id="stats-boots-select"
+              category="boots"
+              value={armor.boots}
+              onChange={(m) => setArmor((a) => ({ ...a, boots: m }))}
+              locale={locale}
+            />
+          </div>
+          <div className="mt-3">
             <ComingSoonSlot label={t("statsOffhandSlotLabel", locale)} />
           </div>
         </section>

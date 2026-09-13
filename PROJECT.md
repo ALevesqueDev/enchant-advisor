@@ -866,3 +866,74 @@ tool.
 Bumped to v1.8.0 (new feature; also the version that introduces the
 app's first non-framework dependency, worth flagging on its own even
 though the version-bump reason is the feature, not the dependency).
+
+## Bug: axe showed sword-only enchants (v1.8.1)
+
+Real user report, caught immediately: switching the Stats Calculator's
+weapon from sword to axe left Sweeping Edge and Fire Aspect still
+selectable, even though both are sword-only in the real game --
+`enchantments.ts`'s own already-verified `CURATION` data already knew
+this (`sweeping_edge: ['sword']`, `fire_aspect: ['sword','mace']`), the
+Phase 1 UI just wasn't checking it. Fixed by gating both selects on
+`enchantmentById(id).categories.includes(weapon)`, resetting to 0 on a
+weapon switch that drops support, plus a new e2e test driving the actual
+switch. A reminder that "the data is already correct" and "the UI reads
+the data correctly" are two different claims, worth testing separately.
+
+## All 4 armor slots + real skin lookup (v1.9.0)
+
+Two more pieces of the "implement everything" push, both requested
+directly after the Phase 1 ship:
+
+**Armor-tier character visuals.** `characterSkin.ts` (split out of
+StatsMode.tsx into its own deep module once it grew a real
+responsibility of its own) recolors the generic placeholder character
+region-by-region based on each equipped armor slot's material --
+helmet tints the head, chestplate tints the torso+arms, leggings tint
+the legs, boots tint just the bottom few rows of each leg (a "boot
+band") so leggings and boots stay visually distinct even both equipped
+at once. Colors are original, loosely evoking each material (diamond =
+cyan, netherite = near-black purple, iron = pale silver, etc.) without
+reproducing any real game texture -- confirmed during Phase 1's scoping
+that Mojang's usage guidelines block redistributing their actual
+texture assets, so this was always going to be original art, not
+extracted ones. All 4 slots are real material pickers now (materialsFor
+per category, "None" as a genuine choice), each recoloring the live 3D
+viewer via `skinview3d`'s `loadSkin()` -- the viewer instance persists
+across re-renders in a ref so recoloring doesn't tear down and rebuild
+the whole 3D scene (losing rotation/camera state) on every slot change.
+
+**Real skin-by-username lookup.** Verified directly against live
+endpoints while scoping this (not from memory or documentation alone):
+Mojang's own username->UUID and UUID->profile JSON APIs
+(`api.minecraftservices.com`, `sessionserver.mojang.com`) do NOT send
+`Access-Control-Allow-Origin` -- confirmed by curling them with an
+`Origin` header and checking for the header on both success and error
+responses, corroborated by a decade of unresolved Mojang bug reports/
+GitHub issues asking for exactly this (e.g. `Mojang/AccountsClient#7`,
+open since 2014, repo since archived). Only the final raw texture host
+(`textures.minecraft.net`) is CORS-open. This is a hard blocker for
+calling Mojang directly from this static, backend-free app.
+
+Chose `mc-heads.net/skin/<username>` (confirmed live: permissive CORS,
+answers a proper OPTIONS preflight, accepts a raw username with no UUID
+step needed client-side, 24h server-side cache + 6h edge cache) over the
+alternatives considered: Crafatar (also CORS-open and more demonstrably
+actively maintained, but UUID-only -- would still need a CORS-blocked
+Mojang call to resolve the username first) and a Vercel serverless
+function (fully native to the existing deployment, would remove the
+third-party dependency entirely, but would be this app's first-ever
+server-side code -- left as a documented option to revisit, not chosen
+for this pass). The tradeoff being accepted: reliability now depends on
+mc-heads.net's own uptime, not just this app's. On any failure (bad
+username, mc-heads.net unreachable) the character falls back to the
+generic construct with an explanatory caption rather than a broken
+texture or a blocked page -- same "inform, never block" pattern as
+`OfflineBanner`.
+
+Once a real skin is loaded, the armor-tier recolor effect backs off
+(`usingRealSkin` state) -- recoloring someone's actual skin
+region-by-region wouldn't mean the same thing it does on the generic
+construct, so real-skin mode shows the skin as-is.
+
+Bumped to v1.9.0 (new feature).

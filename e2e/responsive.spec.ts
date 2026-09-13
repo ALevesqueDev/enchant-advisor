@@ -169,3 +169,49 @@ test("stats mode hides sword-only enchants when the weapon is switched to axe", 
   await expect(page.locator("#stats-sweep-select")).toHaveCount(0);
   await expect(page.locator("#stats-fire-select")).toHaveCount(0);
 });
+
+// Regression coverage for the armor-slot loadout picker (2026-09-13):
+// picking a material for each of the 4 armor slots recolors the 3D
+// character (characterSkin.ts) via viewer.loadSkin() -- not directly
+// pixel-testable through a WebGL canvas here, but this proves the full
+// interaction survives (no crash, no mobile overflow) across all 4 slots
+// at once, the actual "build your whole loadout" flow the feature is for.
+test("stats mode's armor slot pickers work together without crashing or overflowing", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 1000 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Calculateur de statistiques" }).click();
+  await page.getByText("Dégâts par coup").waitFor();
+
+  await page.locator("#stats-helmet-select").selectOption("diamond");
+  await page.locator("#stats-chestplate-select").selectOption("netherite");
+  await page.locator("#stats-leggings-select").selectOption("iron");
+  await page.locator("#stats-boots-select").selectOption("golden");
+
+  await expect(page.locator("#stats-helmet-select")).toHaveValue("diamond");
+  await expect(page.locator("#stats-boots-select")).toHaveValue("golden");
+
+  const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
+});
+
+// Real skin lookup calls a third-party service (mc-heads.net) -- this test
+// deliberately does NOT assert whether that specific call succeeds or
+// fails (CI network policy/the service's own uptime are outside this
+// repo's control), only that clicking "Charger" actually changes the
+// caption away from its initial generic-character text, proving the
+// button is wired to a real attempt rather than a no-op.
+test("stats mode's skin lookup button changes the caption when clicked", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Calculateur de statistiques" }).click();
+  await page.getByText("Dégâts par coup").waitFor();
+
+  const caption = page.locator("#stats-username").locator("../..").locator("p.text-muted");
+  const before = await caption.textContent();
+
+  await page.locator("#stats-username").fill("Notch");
+  await page.getByRole("button", { name: "Charger" }).click();
+  await expect(caption).not.toHaveText(before ?? "", { timeout: 10000 });
+});

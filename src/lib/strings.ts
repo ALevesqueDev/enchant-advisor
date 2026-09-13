@@ -25,12 +25,17 @@ const UI = {
   statsUsernamePlaceholder: { en: "Steve", fr: "Steve" },
   statsLoadSkinButton: { en: "Load", fr: "Charger" },
   statsSkinCaptionGeneric: {
-    en: "Generic character — real skin lookup by username is coming soon.",
-    fr: "Personnage générique — la recherche du vrai skin par pseudo arrive bientôt.",
+    en: "Generic character — type your username above to see your real skin.",
+    fr: "Personnage générique — tape ton pseudo ci-dessus pour voir ton vrai skin.",
   },
-  statsSkinCaptionNamed: {
-    en: "Real skin lookup for this username isn't wired up yet — showing the generic character for now.",
-    fr: "La recherche du vrai skin pour ce pseudo n'est pas encore branchée — le personnage générique reste affiché pour l'instant.",
+  statsSkinLoading: { en: "Loading your skin…", fr: "Chargement de ton skin…" },
+  statsSkinCaptionReal: {
+    en: "Your real skin — armor-tier colors only apply to the generic character, not a real skin.",
+    fr: "Ton vrai skin — les couleurs par palier d'armure ne s'appliquent qu'au personnage générique, pas à un vrai skin.",
+  },
+  statsSkinCaptionFailed: {
+    en: "Couldn't find that username — showing the generic character instead.",
+    fr: "Pseudo introuvable — le personnage générique est affiché à la place.",
   },
   statsEquipmentHeader: { en: "Equipment", fr: "Équipement" },
   statsWeaponSlotLabel: { en: "Weapon", fr: "Arme" },

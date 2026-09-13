@@ -99,3 +99,29 @@ test("bookshelf curve chart renders without causing mobile overflow", async ({ p
   }));
   expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
 });
+
+// Regression coverage for the side-by-side comparison panel (2026-09-13,
+// "mega wow" roadmap item 3): drives the full flow -- calculate a primary
+// enchant, enable comparison, pick a second enchant, compare -- since this
+// is exactly the kind of two-column layout that can quietly reintroduce
+// horizontal overflow on mobile.
+test("comparison panel renders two columns without causing mobile overflow", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Recherche d'enchantement" }).click();
+  await page.locator("#search-enchant-select").selectOption("efficiency");
+  await page.getByRole("button", { name: /Calculer/ }).click();
+  await page.getByText("Ça vaut la peine, plus d'étagères?").waitFor();
+
+  await page.getByText("Comparer avec un autre enchantement").click();
+  await page.locator("#compare-enchant-select").selectOption("fortune");
+  await page.getByRole("button", { name: /Comparer/ }).click();
+  await page.getByText(/meilleures chances par tentative|mêmes chances/).waitFor();
+
+  const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
+});

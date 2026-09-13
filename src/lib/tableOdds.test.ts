@@ -53,9 +53,20 @@ describe("bookshelfCurve", () => {
     // probability can only stay the same or improve. A real regression
     // in the underlying formula (e.g. bookshelves capped incorrectly)
     // would show up here as a dip.
-    const curve = bookshelfCurve("pickaxe", "efficiency", 3, materials, 800);
+    //
+    // 800 trials/point + a 0.05 tolerance flaked in CI (observed directly,
+    // not just in theory: 1 failure in ~16 runs while re-verifying npm ci
+    // for the comparison-panel feature) -- each point is the max of ~18
+    // material x slot Monte-Carlo estimates, so the noise on a
+    // point-to-point difference is wider than a single proportion's
+    // standard error suggests. Bumped to 2500 trials/point (cuts noise by
+    // ~sqrt(800/2500) ≈ 0.57x) and a 0.06 tolerance; re-run 30x with zero
+    // failures before trusting this (see diagnosing-bugs' non-deterministic-
+    // bug guidance: raise the reproduction rate until the fix is verifiable,
+    // don't just widen the tolerance and hope).
+    const curve = bookshelfCurve("pickaxe", "efficiency", 3, materials, 2500);
     for (let i = 1; i < curve.length; i++) {
-      expect(curve[i].probability).toBeGreaterThanOrEqual(curve[i - 1].probability - 0.05); // small Monte-Carlo noise tolerance
+      expect(curve[i].probability).toBeGreaterThanOrEqual(curve[i - 1].probability - 0.06); // small Monte-Carlo noise tolerance
     }
   });
 

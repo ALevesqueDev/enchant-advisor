@@ -13,10 +13,10 @@ import {
   type BookshelfCurvePoint,
 } from "@/lib/tableOdds";
 import { treasureOdds, treasureSourceNote, isStructureLootOnly, type TreasureOddsResult } from "@/lib/treasure";
-import { rankMethods, type RankableMethod, type MethodDetail } from "@/lib/bestMethod";
+import { rankMethods, computeBestMethods, type RankableMethod, type RankedMethod, type MethodDetail } from "@/lib/bestMethod";
 import { rarityFromWeight, rarityLabel, RARITY_VAR } from "@/lib/presentation";
-import { enchantmentName, itemName, bareItemName } from "@/lib/i18n";
-import { t, slotLabel, methodLabel, expectedAttemptsNote } from "@/lib/strings";
+import { enchantmentName, itemName, bareItemName, type Locale } from "@/lib/i18n";
+import { t, slotLabel, methodLabel, expectedAttemptsNote, compareVerdict } from "@/lib/strings";
 import { readShareParams, patchShareParams } from "@/lib/shareLink";
 import { useLocale } from "./LocaleContext";
 import LabeledSelect from "./LabeledSelect";
@@ -29,6 +29,33 @@ const SOURCE_ICON: Record<TreasureOddsResult["source"], string> = {
   trading: "📚",
   structure_loot_only: "🗝️",
 };
+
+/**
+ * One ranked acquisition method → one RankedResultsList row. Pulled out
+ * once a second call site (the side-by-side comparison panel) needed the
+ * exact same label/probability shape the main "best method" list already
+ * built inline — a real seam now, not a hypothetical one.
+ */
+function methodResultItem(m: RankedMethod<MethodDetail>, category: ItemCategory, locale: Locale): RankedResultsItem {
+  return {
+    key: m.kind,
+    label: (
+      <>
+        {methodLabel(m.kind, locale)}
+        {m.kind === "table_item" && m.detail?.slot && (
+          <>
+            {" "}
+            · {itemName(category, m.detail.material as Material, locale)} · {slotLabel(m.detail.slot, locale)}
+          </>
+        )}
+        {m.kind === "table_book" && m.detail?.slot && <> · {slotLabel(m.detail.slot, locale)}</>}
+      </>
+    ),
+    probability: m.probability,
+    probabilityDigits: m.kind === "trading" || m.kind === "fishing" ? 3 : 1,
+    note: expectedAttemptsNote(m.expectedAttempts, locale),
+  };
+}
 
 interface Results {
   table: BestTableCombo[] | null;
@@ -56,6 +83,25 @@ export default function SearchMode() {
 
   const [results, setResults] = useState<Results | null>(null);
   const [calculating, setCalculating] = useState(false);
+
+  // Side-by-side comparison ("mega wow" roadmap item 3): a second,
+  // independent enchant/level/item selection compared against the
+  // primary one above via computeBestMethods() -- the same seam page.tsx
+  // already uses for its acquisition hints, since here too there's no
+  // pre-computed results to reuse (unlike the primary search's own
+  // table/book/tradeAndFish, already sitting in `results`). Deliberately
+  // shares the primary panel's bookshelves/luckOfTheSea rather than
+  // giving the comparison its own: the natural question this answers is
+  // "which enchant should I go for on my table", not "compare two
+  // different table setups". Not synced to the share link (out of scope
+  // for this pass -- the primary search is still fully shareable).
+  const [compareEnabled, setCompareEnabled] = useState(false);
+  const [compareEnchantId, setCompareEnchantId] = useState(sortedEnchantments[1]?.id ?? sortedEnchantments[0].id);
+  const compareEnchant = enchantmentById(compareEnchantId);
+  const [compareLevel, setCompareLevel] = useState(compareEnchant.maxLevel);
+  const [compareCategory, setCompareCategory] = useState<ItemCategory>(compareEnchant.categories[0]);
+  const [compareRanked, setCompareRanked] = useState<RankedMethod<MethodDetail>[] | null>(null);
+  const [comparing, setComparing] = useState(false);
 
   useEffect(() => {
     // One-time hydration from a shared link — this component only exists
@@ -127,6 +173,26 @@ export default function SearchMode() {
     setLevel(e.maxLevel);
     setCategory(e.categories[0]);
     setResults(null);
+  }
+
+  function changeCompareEnchant(id: string) {
+    const e = enchantmentById(id);
+    setCompareEnchantId(id);
+    setCompareLevel(e.maxLevel);
+    setCompareCategory(e.categories[0]);
+    setCompareRanked(null);
+  }
+
+  function compare() {
+    setComparing(true);
+    setCompareRanked(null);
+    // Same "let the UI paint first" trick as calculate() below.
+    setTimeout(() => {
+      setCompareRanked(
+        computeBestMethods({ category: compareCategory, enchantId: compareEnchantId, level: compareLevel, bookshelves, luckOfTheSea })
+      );
+      setComparing(false);
+    }, 10);
   }
 
   function calculate() {
@@ -277,29 +343,110 @@ export default function SearchMode() {
           <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
             {t("searchBestMethodHeader", locale)}
           </h3>
-          <RankedResultsList
-            items={bestMethods.map(
-              (m): RankedResultsItem => ({
-                key: m.kind,
-                label: (
-                  <>
-                    {methodLabel(m.kind, locale)}
-                    {m.kind === "table_item" && m.detail?.slot && (
-                      <>
-                        {" "}
-                        · {itemName(category, m.detail.material as Material, locale)} · {slotLabel(m.detail.slot, locale)}
-                      </>
-                    )}
-                    {m.kind === "table_book" && m.detail?.slot && <> · {slotLabel(m.detail.slot, locale)}</>}
-                  </>
-                ),
-                probability: m.probability,
-                probabilityDigits: m.kind === "trading" || m.kind === "fishing" ? 3 : 1,
-                note: expectedAttemptsNote(m.expectedAttempts, locale),
-              })
-            )}
-          />
+          <RankedResultsList items={bestMethods.map((m) => methodResultItem(m, category, locale))} />
           <p className="mt-3 text-xs text-muted">{t("searchBestMethodCaveat", locale)}</p>
+        </section>
+      )}
+
+      {bestMethods && (
+        <section className="mt-6">
+          <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
+            <input
+              type="checkbox"
+              checked={compareEnabled}
+              onChange={(e) => setCompareEnabled(e.target.checked)}
+              className="h-3.5 w-3.5"
+            />
+            {t("compareToggleLabel", locale)}
+          </label>
+
+          {compareEnabled && (
+            <div className="panel mt-3 p-4">
+              <div className="flex flex-wrap items-end gap-4">
+                <LabeledSelect
+                  id="compare-enchant-select"
+                  label={t("compareEnchantLabel", locale)}
+                  value={compareEnchantId}
+                  onChange={(e) => changeCompareEnchant(e.target.value)}
+                >
+                  {sortedEnchantments.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {enchantmentName(e.id, locale)}
+                    </option>
+                  ))}
+                </LabeledSelect>
+
+                <LabeledSelect
+                  id="compare-level-select"
+                  label={t("searchLevelLabel", locale)}
+                  value={compareLevel}
+                  onChange={(e) => setCompareLevel(Number(e.target.value))}
+                >
+                  {Array.from({ length: compareEnchant.maxLevel }, (_, i) => i + 1).map((lvl) => (
+                    <option key={lvl} value={lvl}>
+                      {t("levelPrefix", locale)} {lvl}
+                    </option>
+                  ))}
+                </LabeledSelect>
+
+                {!compareEnchant.treasureOnly && (
+                  <LabeledSelect
+                    id="compare-item-select"
+                    label={t("searchItemLabel", locale)}
+                    value={compareCategory}
+                    onChange={(e) => setCompareCategory(e.target.value as ItemCategory)}
+                  >
+                    {compareEnchant.categories.map((c) => (
+                      <option key={c} value={c}>
+                        {bareItemName(c, locale)}
+                      </option>
+                    ))}
+                  </LabeledSelect>
+                )}
+
+                <button
+                  onClick={compare}
+                  disabled={comparing}
+                  className="no-print glint accent-gradient rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:opacity-50"
+                >
+                  {comparing ? t("searchCalculating", locale) : t("compareButton", locale)}
+                </button>
+              </div>
+              <p className="mt-2 text-xs text-muted">{t("compareSameSetupNote", locale)}</p>
+
+              {compareRanked && (
+                <>
+                  <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-muted">
+                        {enchantmentName(enchantId, locale)} ({t("levelPrefix", locale)} {level})
+                      </p>
+                      <RankedResultsList items={bestMethods.slice(0, 1).map((m) => methodResultItem(m, category, locale))} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-muted">
+                        {enchantmentName(compareEnchantId, locale)} ({t("levelPrefix", locale)} {compareLevel})
+                      </p>
+                      {/* computeBestMethods() only returns null when literally nothing applies at
+                          all -- "shouldn't happen in practice" per its own docs, since every
+                          enchantment has at least a structure-loot or table route. compareRanked
+                          being truthy here (guarded above) means it's a non-empty array. */}
+                      <RankedResultsList items={compareRanked.slice(0, 1).map((m) => methodResultItem(m, compareCategory, locale))} />
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs text-muted">
+                    {compareVerdict(
+                      enchantmentName(enchantId, locale),
+                      bestMethods[0].probability,
+                      enchantmentName(compareEnchantId, locale),
+                      compareRanked[0].probability,
+                      locale
+                    )}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
         </section>
       )}
 

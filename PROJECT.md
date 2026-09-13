@@ -671,3 +671,49 @@ Verified with a new Playwright e2e test that actually drives Search mode
 (select an enchant, click Calculate, wait for the chart) rather than just
 loading the static page — the existing overflow tests wouldn't have
 caught a bug introduced only after this chart renders.
+
+## Side-by-side enchantment comparison (v1.7.0)
+
+"Mega wow" roadmap item 3: Search mode can now compare two enchantments
+head-to-head ("Sharpness vs Smite for PVE" was the motivating example) —
+a "Compare with another enchantment" checkbox reveals a second, fully
+independent enchant/level/item selection, computed via `bestMethod.ts`'s
+`computeBestMethods()` and shown side by side with the primary search's
+own top pick, plus a one-line verdict (`compareVerdict()` in
+`strings.ts`).
+
+`computeBestMethods()` was exactly the right seam for this, unchanged:
+its own header already says it's for a caller with "no pre-computed
+results to reuse" (originally written for the advisor's acquisition
+hints), which describes this second, ad-hoc selection precisely — no new
+computation function needed, just a second call site.
+
+Deliberately scoped down from a full "duplicate the whole search UI"
+comparison: the comparison side reuses the primary panel's own bookshelf
+count and Luck of the Sea rather than getting its own (the real question
+is "which enchant should I chase on the table I already have", not "compare
+two different table setups"), and shows only each side's single best
+method rather than the full multi-section breakdown the primary search
+gets — a clean two-column verdict, not two copies of the whole page. Not
+wired into the share link for this pass (the primary search still is).
+
+`methodResultItem()` — the label/probability-row mapping the main "best
+method" list already built inline — was pulled out once the comparison
+panel needed the exact same shape for a second call site: a real seam
+now, not a hypothetical one, per `codebase-design`'s "one adapter is
+hypothetical, two is real."
+
+**Found and fixed in passing**: while re-verifying `npm ci` before this
+commit, the previous release's bookshelf-curve monotonicity test (800
+trials/point, 0.05 tolerance) flaked for the first time — 1 failure in
+roughly 16 runs. Each curve point is the max of ~18 material×slot
+Monte-Carlo estimates, so a point-to-point difference is noisier than a
+single proportion's standard error suggests. Diagnosed per
+`diagnosing-bugs`'s non-deterministic-bug guidance (raise the
+reproduction rate until a fix is verifiable, don't just widen the
+tolerance and hope): bumped to 2500 trials/point + a 0.06 tolerance,
+re-run 30× with zero failures before trusting it.
+
+Bumped to v1.7.0 (new user-facing feature; the test-flakiness fix rides
+along rather than getting its own patch release, since it never shipped
+as a visible bug — only as an occasional CI flake).

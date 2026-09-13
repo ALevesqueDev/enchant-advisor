@@ -127,6 +127,14 @@ const UI = {
   methodTableBook: { en: "Table (book)", fr: "Table (livre)" },
   neverAtThisLevel: { en: "essentially never at this level", fr: "quasiment jamais à ce niveau" },
 
+  compareToggleLabel: { en: "Compare with another enchantment", fr: "Comparer avec un autre enchantement" },
+  compareEnchantLabel: { en: "Enchantment B", fr: "Enchantement B" },
+  compareButton: { en: "✦ Compare", fr: "✦ Comparer" },
+  compareSameSetupNote: {
+    en: "Same bookshelf count and Luck of the Sea as above — only the enchantment, level, and item change.",
+    fr: "Même nombre d'étagères et même Luck of the Sea que ci-dessus — seuls l'enchantement, le niveau et l'objet changent.",
+  },
+
   rarityCommon: { en: "Common", fr: "Commun" },
   rarityUncommon: { en: "Uncommon", fr: "Peu commun" },
   rarityRare: { en: "Rare", fr: "Rare" },
@@ -215,6 +223,19 @@ export function bookshelfCurveSummary(points: BookshelfCurvePoint[], locale: Loc
   return locale === "en"
     ? `Best odds: ${bestPct}% at ${best.bookshelves} bookshelves (vs ${worstPct}% at ${worst.bookshelves}).`
     : `Meilleures chances : ${bestPct}% à ${best.bookshelves} étagères (contre ${worstPct}% à ${worst.bookshelves}).`;
+}
+
+/** "Percussion has better odds per attempt (12.3% vs 4.1%)." — the one-line verdict under a side-by-side enchantment comparison. */
+export function compareVerdict(nameA: string, probA: number, nameB: string, probB: number, locale: Locale): string {
+  if (Math.abs(probA - probB) < 0.001) {
+    return locale === "en" ? "Roughly the same odds either way." : "À peu près les mêmes chances des deux côtés.";
+  }
+  const winnerName = probA > probB ? nameA : nameB;
+  const winnerPct = (Math.max(probA, probB) * 100).toFixed(1);
+  const loserPct = (Math.min(probA, probB) * 100).toFixed(1);
+  return locale === "en"
+    ? `${winnerName} has better odds per attempt (${winnerPct}% vs ${loserPct}%).`
+    : `${winnerName} a de meilleures chances par tentative (${winnerPct} % vs ${loserPct} %).`;
 }
 
 export function levelTargetNote(currentLevel: number, targetLevel: number, locale: Locale): string {

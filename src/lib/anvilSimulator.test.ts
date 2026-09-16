@@ -53,6 +53,30 @@ describe("simulateAnvilCombine", () => {
     expect(result).toEqual({ status: "ok", resultEnchantId: "efficiency", resultLevel: 1, cost: 3 + 1 + 1, tooExpensive: false });
   });
 
+  it("a book sacrifice (the default) costs anvilCost x level, no doubling", () => {
+    const result = simulateAnvilCombine(empty, { enchantId: "efficiency", level: 5, priorUses: 0, isBook: true }, false);
+    expect(result).toMatchObject({ status: "ok", cost: 5 });
+  });
+
+  it("an item sacrifice (e.g. combining two pickaxes) doubles the enchant cost, per anvil.ts's verified rule", () => {
+    const result = simulateAnvilCombine(empty, { enchantId: "efficiency", level: 5, priorUses: 0, isBook: false }, false);
+    expect(result).toMatchObject({ status: "ok", cost: 10 });
+  });
+
+  it("two books merging into one book still uses the book (x1) rate", () => {
+    const target: AnvilSlot = { enchantId: "efficiency", level: 2, priorUses: 0, isBook: true };
+    const sacrifice: AnvilSlot = { enchantId: "efficiency", level: 2, priorUses: 0, isBook: true };
+    const result = simulateAnvilCombine(target, sacrifice, false);
+    expect(result).toMatchObject({ status: "ok", resultLevel: 3, cost: 3 }); // efficiency anvilCost 1 x resultLevel 3 x1
+  });
+
+  it("two identical items merging (e.g. two diamond pickaxes) uses the item (x2) rate -- target's own isBook doesn't affect cost, only the sacrifice's does", () => {
+    const target: AnvilSlot = { enchantId: "efficiency", level: 2, priorUses: 0, isBook: false };
+    const sacrifice: AnvilSlot = { enchantId: "efficiency", level: 2, priorUses: 0, isBook: false };
+    const result = simulateAnvilCombine(target, sacrifice, false);
+    expect(result).toMatchObject({ status: "ok", resultLevel: 3, cost: 6 }); // anvilCost 1 x resultLevel 3 x2
+  });
+
   it("flags a result over the 39-level survival cap", () => {
     const target: AnvilSlot = { enchantId: null, level: 0, priorUses: 6 }; // 2^6-1 = 63, already over on its own
     const result = simulateAnvilCombine(target, { enchantId: "efficiency", level: 1, priorUses: 0 }, false);

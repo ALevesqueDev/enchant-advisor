@@ -322,6 +322,24 @@ test("anvil simulator computes a live combine cost", async ({ page }) => {
   await expect(page.locator("#anvil-sim-cost")).toHaveText("5");
 });
 
+// Regression coverage for v1.14.0 (2026-09-15): the sacrifice slot can now
+// be the chosen item instead of a book, which per anvil.ts's verified rule
+// doubles the enchant cost. Switching the SlotKindPicker radio from the
+// book default to the item should bump the same Efficiency V combine from
+// 5 (book, previous test) to 10 (item).
+test("anvil simulator doubles the cost when the sacrifice slot is switched to an item", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Enclume" }).click();
+  await page.getByText("Rien à faire").waitFor();
+
+  await page.locator("#anvil-sacrifice-enchant-select").selectOption("efficiency");
+  await page.locator("#anvil-sacrifice-level-select").selectOption("5");
+  await expect(page.locator("#anvil-sim-cost")).toHaveText("5"); // book default, unchanged
+
+  await page.locator("#anvil-sacrifice-kind-item").check();
+  await expect(page.locator("#anvil-sim-cost")).toHaveText("10");
+});
+
 test("anvil simulator's slot grid stays overflow-free on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 900 });
   await page.goto("/");

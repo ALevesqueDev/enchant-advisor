@@ -19,8 +19,14 @@ const UI = {
 
   anvilSimTagline: { en: "Put anything in the two slots — see the exact result and cost.", fr: "Mets ce que tu veux dans les 2 emplacements — vois le résultat et le coût exacts." },
   anvilSimTargetLabel: { en: "Target", fr: "Cible" },
-  anvilSimSacrificeLabel: { en: "Sacrifice (book)", fr: "Sacrifice (livre)" },
+  // No longer hardcodes "(book)" -- either slot can now be a book or the
+  // chosen item (SlotKindPicker), so the label can't assume one.
+  anvilSimSacrificeLabel: { en: "Sacrifice", fr: "Sacrifice" },
   anvilSimResultLabel: { en: "Result", fr: "Résultat" },
+  anvilSlotKindBook: { en: "Book", fr: "Livre" },
+  // Legend for the book-vs-item radio pair (SlotKindPicker) -- screen-reader
+  // only, since the visible target/sacrifice heading already gives context.
+  anvilSlotKindLegend: { en: "Slot contains", fr: "L'emplacement contient" },
   anvilSimExistingEnchantLabel: { en: "Already has", fr: "A déjà" },
   anvilSimPriorUsesLabel: { en: "Times used at the anvil before", fr: "Fois déjà utilisé à l'enclume" },
   anvilSimRenameLabel: { en: "Rename (+1 level)", fr: "Renommer (+1 niveau)" },

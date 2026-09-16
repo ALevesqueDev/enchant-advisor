@@ -1054,7 +1054,8 @@ sacrifice slot -> result), scoped through a short `grilling` round: one
 enchantment per slot (not a whole book's worth at once — `anvil.ts`'s own
 step-by-step model already assumes this, and generalizing to several
 enchants per side at once is real added complexity with no clear near-term
-need), sacrifice is always a book (not another item), no repair-with-
+need), sacrifice was always a book at launch (fixed in v1.14.0 below —
+either slot can now be a book or the chosen item), no repair-with-
 material or durability modeling yet. `anvilSimulator.ts` reuses
 `anvil.ts`'s own `priorWorkPenalty()` directly (now exported) rather than
 a second copy of the same formula, per the user's explicit ask to avoid
@@ -1126,5 +1127,38 @@ which made a working fix look broken. Resolved with `netstat -ano` to
 find the real PID and Windows' own `taskkill //F //PID`, not `pkill`.
 Worth remembering for any future "I just fixed this, why does it still
 show the old behavior locally" moment.
+
+## Anvil simulator: either slot can be a book or the chosen item (v1.14.0)
+
+User report: "Le anvil devrais pouvoir être deux livre dans chaque
+emplacement ou deux pioche exemple" — the v1.13.0 simulator hardcoded
+the sacrifice slot as always a book, which its own header comment had
+already flagged as a deliberate scope limit, not a hidden bug. Real
+anvils accept any combination — item+book, book+book, item+item (e.g.
+two pickaxes) — so this removes that limit.
+
+`AnvilSlot` gains `isBook?: boolean` (defaults to `true` on omission,
+so every pre-existing caller/test keeps its old book-only behavior
+unchanged). `anvilSimulator.ts` already knew the real-game rule that an
+ITEM source costs double a BOOK source (documented in `anvil.ts`'s own
+header, just unused by the interactive simulator until now) — wiring
+it in was reusing an already-verified fact, not a new claim needing a
+fresh wiki check: `enchantCost = anvilCost * resultLevel * (sacrificeIsBook ? 1 : 2)`.
+Only the SACRIFICE's `isBook` affects cost — the target's physical form
+never did in the real anvil either.
+
+New `SlotKindPicker` control (a book/item radio pair) added to both the
+target and sacrifice panels in `AnvilMode.tsx`; the result slot's
+display uses the TARGET's `isBook`, since the sacrifice is always
+consumed and the target's own physical identity is what the merged
+item keeps. `anvilSimTargetLabel`/`anvilSimSacrificeLabel` no longer
+hardcode "(book)" in either locale, since neither slot assumes one now.
+
+4 new tests in `anvilSimulator.test.ts` cover all 4 book/item
+combinations directly (book+book stays x1, item+item is x2, and the
+existing book-default tests keep passing unchanged).
+
+Bumped to v1.14.0 (a real, if scoped-down-from-day-one, user-facing
+capability restored).
 
 Bumped to v1.13.1 (bug fix).

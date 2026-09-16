@@ -4,9 +4,14 @@
 //
 // Scope, deliberately narrower than the real anvil (see PROJECT.md for the
 // full record): one enchantment per slot (not a whole book's worth at
-// once), sacrifice is always a book (not another item), no repair-with-
-// material and no durability modeling. Renaming is the one extra real
-// mechanic included, since it's simple and fully verified (see below).
+// once), no repair-with-material and no durability modeling. Renaming is
+// the one extra real mechanic included, since it's simple and fully
+// verified (see below).
+//
+// Each slot can independently be a book or the chosen item (e.g. two
+// enchanted books merging into one, or two identical pickaxes merging into
+// one) — see AnvilSlot.isBook and anvil.ts's own header comment for the
+// verified book-vs-item 2x cost relationship this applies.
 //
 // Renaming cost: verified verbatim against minecraft.wiki/w/Anvil_mechanics
 // this session -- a flat 1 level, on top of whatever else the operation
@@ -31,6 +36,14 @@ export interface AnvilSlot {
   level: number;
   /** How many times THIS item has already been an anvil TARGET before -- each side tracks its own. */
   priorUses: number;
+  /**
+   * Whether this slot holds a book rather than the chosen item (two
+   * pickaxes, two books, or one of each -- all real, valid anvil
+   * combinations). Defaults to true (book) when omitted, matching this
+   * simulator's original book-only behavior -- every existing caller/test
+   * that doesn't set this keeps working unchanged.
+   */
+  isBook?: boolean;
 }
 
 export type AnvilSimResult =
@@ -77,7 +90,11 @@ export function simulateAnvilCombine(target: AnvilSlot, sacrifice: AnvilSlot, re
       : Math.max(target.level, sacrifice.level) // unequal -- higher wins, no bonus
     : sacrifice.level; // target had nothing (or something compatible-and-different, which this single-enchant-per-slot model doesn't represent) -- sacrifice's enchant applies fresh
 
-  const enchantCost = sacrificeEnchant.anvilCost * resultLevel; // book source -- no x2 (sacrifice is always a book in this simulator, see file header)
+  // anvil.ts's header comment: anvilCost applies as-is when the source is a
+  // book; combining from an ITEM instead (sacrifice.isBook === false) costs
+  // double -- a long-standing, well-corroborated Minecraft rule.
+  const sacrificeIsBook = sacrifice.isBook ?? true;
+  const enchantCost = sacrificeEnchant.anvilCost * resultLevel * (sacrificeIsBook ? 1 : 2);
   const cost = penalties + enchantCost + renameCost;
 
   return { status: "ok", resultEnchantId: sacrifice.enchantId, resultLevel, cost, tooExpensive: cost > 39 };

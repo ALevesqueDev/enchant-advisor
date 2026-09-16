@@ -134,6 +134,24 @@ function ArmorProtectionSelect({
   );
 }
 
+/**
+ * One armor slot's Unbreaking level -- separate from ArmorProtectionSelect
+ * since a piece's durability and its damage reduction are independent real
+ * enchants (both can be on the same piece at once, unlike the mutually
+ * exclusive Protection family).
+ */
+function ArmorUnbreakingSelect({ id, value, onChange, locale }: { id: string; value: number; onChange: (level: number) => void; locale: Locale }) {
+  return (
+    <LabeledSelect id={id} label={t("statsUnbreakingLabel", locale)} value={value} onChange={(e) => onChange(Number(e.target.value))} fullWidth>
+      {Array.from({ length: enchantmentById("unbreaking").maxLevel + 1 }, (_, i) => i).map((lvl) => (
+        <option key={lvl} value={lvl}>
+          {lvl === 0 ? t("noneOption", locale) : lvl}
+        </option>
+      ))}
+    </LabeledSelect>
+  );
+}
+
 export default function StatsMode() {
   const { locale } = useLocale();
 
@@ -146,13 +164,19 @@ export default function StatsMode() {
   const [unbreakingLevel, setUnbreakingLevel] = useState(0);
   const [toolMaterial, setToolMaterial] = useState<Material>("diamond");
   const [efficiencyLevel, setEfficiencyLevel] = useState(5);
+  const [toolUnbreakingLevel, setToolUnbreakingLevel] = useState(0);
   const [armor, setArmor] = useState<ArmorLoadout>({});
   const [armorProtection, setArmorProtection] = useState<Partial<Record<ArmorSlot, ArmorPieceEnchant>>>({});
+  // Per-piece, like armorProtection -- each of the 4 pieces carries its own
+  // durability independently, so a single shared level wouldn't represent a
+  // real loadout (e.g. a fresh helmet next to a heavily-Unbreaking chestplate).
+  const [armorUnbreaking, setArmorUnbreaking] = useState<Partial<Record<ArmorSlot, number>>>({});
   const [powerLevel, setPowerLevel] = useState(0);
   const [infinityOn, setInfinityOn] = useState(false);
   const [piercingLevel, setPiercingLevel] = useState(0);
   const [multishotOn, setMultishotOn] = useState(false);
   const [quickChargeLevel, setQuickChargeLevel] = useState(0);
+  const [rangedUnbreakingLevel, setRangedUnbreakingLevel] = useState(0);
   const [username, setUsername] = useState("");
   const [skinCaption, setSkinCaption] = useState<string | null>(null);
 
@@ -307,6 +331,8 @@ export default function StatsMode() {
   const durabilitySave = unbreakingSaveChance(unbreakingLevel);
 
   const miningSpeed = efficiencySpeedMultiplier(toolBaseSpeed(toolMaterial), efficiencyLevel);
+  const toolDurabilitySave = unbreakingSaveChance(toolUnbreakingLevel);
+  const rangedDurabilitySave = unbreakingSaveChance(rangedUnbreakingLevel);
 
   // Sum armor points across whichever of the 4 slots are actually
   // equipped -- an empty slot contributes 0/0, same as having nothing on.
@@ -497,6 +523,18 @@ export default function StatsMode() {
                 </option>
               ))}
             </LabeledSelect>
+            <LabeledSelect
+              id="stats-tool-unbreaking-select"
+              label={t("statsUnbreakingLabel", locale)}
+              value={toolUnbreakingLevel}
+              onChange={(e) => setToolUnbreakingLevel(Number(e.target.value))}
+            >
+              {Array.from({ length: enchantmentById("unbreaking").maxLevel + 1 }, (_, i) => i).map((lvl) => (
+                <option key={lvl} value={lvl}>
+                  {lvl === 0 ? t("noneOption", locale) : lvl}
+                </option>
+              ))}
+            </LabeledSelect>
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -514,6 +552,12 @@ export default function StatsMode() {
                 onChange={(v) => setArmorProtection((a) => ({ ...a, helmet: v }))}
                 locale={locale}
               />
+              <ArmorUnbreakingSelect
+                id="stats-helmet-unbreaking-select"
+                value={armorUnbreaking.helmet ?? 0}
+                onChange={(lvl) => setArmorUnbreaking((a) => ({ ...a, helmet: lvl }))}
+                locale={locale}
+              />
             </div>
             <div className="space-y-2">
               <ArmorSlotSelect
@@ -527,6 +571,12 @@ export default function StatsMode() {
                 id="stats-chestplate-protection-select"
                 value={armorProtection.chestplate}
                 onChange={(v) => setArmorProtection((a) => ({ ...a, chestplate: v }))}
+                locale={locale}
+              />
+              <ArmorUnbreakingSelect
+                id="stats-chestplate-unbreaking-select"
+                value={armorUnbreaking.chestplate ?? 0}
+                onChange={(lvl) => setArmorUnbreaking((a) => ({ ...a, chestplate: lvl }))}
                 locale={locale}
               />
             </div>
@@ -544,6 +594,12 @@ export default function StatsMode() {
                 onChange={(v) => setArmorProtection((a) => ({ ...a, leggings: v }))}
                 locale={locale}
               />
+              <ArmorUnbreakingSelect
+                id="stats-leggings-unbreaking-select"
+                value={armorUnbreaking.leggings ?? 0}
+                onChange={(lvl) => setArmorUnbreaking((a) => ({ ...a, leggings: lvl }))}
+                locale={locale}
+              />
             </div>
             <div className="space-y-2">
               <ArmorSlotSelect
@@ -557,6 +613,12 @@ export default function StatsMode() {
                 id="stats-boots-protection-select"
                 value={armorProtection.boots}
                 onChange={(v) => setArmorProtection((a) => ({ ...a, boots: v }))}
+                locale={locale}
+              />
+              <ArmorUnbreakingSelect
+                id="stats-boots-unbreaking-select"
+                value={armorUnbreaking.boots ?? 0}
+                onChange={(lvl) => setArmorUnbreaking((a) => ({ ...a, boots: lvl }))}
                 locale={locale}
               />
             </div>
@@ -619,6 +681,12 @@ export default function StatsMode() {
               </div>
             </div>
           ))}
+          {toolUnbreakingLevel > 0 && (
+            <div className="rounded-lg bg-[var(--surface-raised)] p-3">
+              <div className="text-xs text-muted">{t("statsDurabilitySaveLabel", locale)}</div>
+              <div className="font-display accent-text mt-1 text-2xl font-bold">{(toolDurabilitySave * 100).toFixed(0)}%</div>
+            </div>
+          )}
         </div>
         <p className="mt-3 text-xs text-muted">{t("statsBreakTimeNote", locale)}</p>
       </section>
@@ -662,6 +730,18 @@ export default function StatsMode() {
               </option>
             ))}
           </LabeledSelect>
+          <LabeledSelect
+            id="stats-ranged-unbreaking-select"
+            label={t("statsUnbreakingLabel", locale)}
+            value={rangedUnbreakingLevel}
+            onChange={(e) => setRangedUnbreakingLevel(Number(e.target.value))}
+          >
+            {Array.from({ length: enchantmentById("unbreaking").maxLevel + 1 }, (_, i) => i).map((lvl) => (
+              <option key={lvl} value={lvl}>
+                {lvl === 0 ? t("noneOption", locale) : lvl}
+              </option>
+            ))}
+          </LabeledSelect>
           <label className="flex items-center gap-2 self-end pb-2 text-sm">
             <input type="checkbox" checked={infinityOn} onChange={(e) => setInfinityOn(e.target.checked)} className="h-3.5 w-3.5" />
             {t("statsInfinityLabel", locale)}
@@ -672,7 +752,7 @@ export default function StatsMode() {
           </label>
         </div>
 
-        {(powerLevel > 0 || piercingLevel > 0 || quickChargeLevel > 0 || infinityOn || multishotOn) && (
+        {(powerLevel > 0 || piercingLevel > 0 || quickChargeLevel > 0 || rangedUnbreakingLevel > 0 || infinityOn || multishotOn) && (
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
             {powerLevel > 0 && (
               <div className="rounded-lg bg-[var(--surface-raised)] p-3">
@@ -701,6 +781,12 @@ export default function StatsMode() {
                 <div className="font-display accent-text mt-1 text-lg font-bold">{t("statsMultishotValue", locale)}</div>
               </div>
             )}
+            {rangedUnbreakingLevel > 0 && (
+              <div className="rounded-lg bg-[var(--surface-raised)] p-3">
+                <div className="text-xs text-muted">{t("statsDurabilitySaveLabel", locale)}</div>
+                <div className="font-display accent-text mt-1 text-2xl font-bold">{(rangedDurabilitySave * 100).toFixed(0)}%</div>
+              </div>
+            )}
             {infinityOn && (
               <div className="rounded-lg bg-[var(--surface-raised)] p-3">
                 <div className="text-xs text-muted">{t("statsInfinityLabel", locale)}</div>
@@ -724,6 +810,20 @@ export default function StatsMode() {
             </div>
           ))}
         </div>
+        {ARMOR_SLOTS.some((slot) => (armorUnbreaking[slot] ?? 0) > 0) && (
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {ARMOR_SLOTS.filter((slot) => (armorUnbreaking[slot] ?? 0) > 0).map((slot) => (
+              <div key={slot} className="rounded-lg bg-[var(--surface-raised)] p-3">
+                <div className="text-xs text-muted">
+                  {bareItemName(slot, locale)} · {t("statsDurabilitySaveLabel", locale)}
+                </div>
+                <div className="font-display accent-text mt-1 text-2xl font-bold">
+                  {(unbreakingSaveChance(armorUnbreaking[slot]!) * 100).toFixed(0)}%
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         <p className="mt-3 text-xs text-muted">{t("statsArmorNote", locale)}</p>
       </section>
     </div>

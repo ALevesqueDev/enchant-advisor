@@ -1161,4 +1161,54 @@ existing book-default tests keep passing unchanged).
 Bumped to v1.14.0 (a real, if scoped-down-from-day-one, user-facing
 capability restored).
 
+## Stats Calculator: Unbreaking added to Tool, Armor, and Ranged (v1.15.0)
+
+Same user message as the anvil fix above, second half: "il faudrait
+pouvoir avoir exemple un + pour ajouter des enchante déjà présent... si
+exemple on a sur un item déjà 3 enchante on ne peux pas le calculer."
+A naive read (add a generic "+" to stack arbitrary enchants) would have
+over-built this — most sections already support several *simultaneous*
+enchants (the weapon section alone already has 4: a damage enchant,
+Sweeping Edge, Fire Aspect, Unbreaking). Two rounds of direct
+clarification narrowed the real gap: "Il semble n'y avoir que l'épée
+pour lequel on peut ajouter plus d'un," confirmed as "On devrais
+pouvoir ajouter plus enchantements" — the Tool and Armor sections each
+had only ONE enchant field (Efficiency; one Protection pick per piece),
+with no Unbreaking anywhere outside the weapon section.
+
+Fix: reuse `unbreakingSaveChance()` — already pure and item-agnostic
+(a percentage-chance formula, not tied to per-item max durability), so
+no new game-data verification was needed, only wiring an
+already-trusted function into 3 more places:
+
+- **Tool** (pickaxe): one new `stats-tool-unbreaking-select`, alongside
+  the existing Efficiency select. Its "Chance to save durability" tile
+  lives in the Mining section (next to break times), not the weapon
+  Results section, since that's where the tool's own other stats live.
+- **Armor**: a new `ArmorUnbreakingSelect` per piece (4 total, one per
+  slot) — deliberately PER-PIECE, not one shared level, mirroring how
+  `armorProtection` already works: a real loadout can have a fresh
+  helmet next to a heavily-Unbreaking chestplate, so a single shared
+  state var would have been wrong. New `armorUnbreaking: Partial<Record<ArmorSlot, number>>`
+  state; result tiles in the Armor section show one tile per equipped
+  piece that actually has Unbreaking set, labeled with that piece's own
+  name so multiple tiles stay distinguishable.
+- **Ranged** (bow/crossbow): one new `stats-ranged-unbreaking-select`
+  alongside Power/Piercing/Quick Charge, with its own result tile in
+  that section's existing conditional grid.
+
+No new strings needed — `statsUnbreakingLabel` ("Unbreaking") and
+`statsDurabilitySaveLabel` ("Chance to save durability") were already
+generic enough to reuse across all 4 sections rather than adding
+per-section duplicates.
+
+3 new e2e tests (one per section) drive the real select-and-read-the-
+tile flow; the armor test specifically sets two different pieces to
+two different levels and asserts both distinct percentages are on
+screen at once, to catch a regression back to one shared level.
+(First attempt used level 5 for a test value and failed — Unbreaking's
+real max level is III, not V; fixed to use valid levels 1-3.)
+
+Bumped to v1.15.0 (new feature).
+
 Bumped to v1.13.1 (bug fix).

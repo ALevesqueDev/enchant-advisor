@@ -306,6 +306,50 @@ test("stats mode computes live ranged enchant bonuses", async ({ page }) => {
   await expect(page.getByText("+3.0")).toBeVisible();
 });
 
+// Regression coverage for the fix requested directly by the user
+// (2026-09-15): "Aussi dans le calculateur de Stats il faudrait pouvoir
+// avoir... plus enchantements" -- the Tool (pickaxe) section previously
+// only had Efficiency, no Unbreaking. Unbreaking level 3 gives a known
+// save chance of 3/4 = 75% (unbreakingSaveChance's own linear formula).
+test("stats mode's tool section now supports Unbreaking, not just Efficiency", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Calculateur de statistiques" }).click();
+  await page.getByText("Vitesse de minage").waitFor();
+
+  await page.locator("#stats-tool-unbreaking-select").selectOption("3");
+  await expect(page.getByText("75%")).toBeVisible();
+});
+
+// Same fix, armor side: each of the 4 pieces now carries its own
+// Unbreaking level independently (a real loadout can have a fresh helmet
+// next to a heavily-enchanted chestplate) -- confirm two different
+// pieces at two different levels both show their own distinct tile
+// (level 1 -> 1/2 = 50%, level 2 -> 2/3 = 67%; Unbreaking's real max
+// level is III), proving they don't share one shared state var.
+test("stats mode's armor pieces each support their own independent Unbreaking level", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 1400 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Calculateur de statistiques" }).click();
+  await page.getByText("Armure (coup typique)").waitFor();
+
+  await page.locator("#stats-helmet-unbreaking-select").selectOption("1");
+  await page.locator("#stats-boots-unbreaking-select").selectOption("2");
+
+  await expect(page.getByText("50%")).toBeVisible();
+  await expect(page.getByText("67%")).toBeVisible();
+});
+
+// Same fix, ranged side: the bow/crossbow section previously had no
+// Unbreaking either.
+test("stats mode's ranged section now supports Unbreaking", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Calculateur de statistiques" }).click();
+  await page.getByText("Arc et arbalète").waitFor();
+
+  await page.locator("#stats-ranged-unbreaking-select").selectOption("3");
+  await expect(page.getByText("75%")).toBeVisible();
+});
+
 // Anvil simulator (2026-09-13): drives the real flow -- put Efficiency V
 // in the sacrifice slot on the default pickaxe, confirm the live cost
 // (anvilCost 1 x level 5 = 5) shows up, proving the UI is actually wired

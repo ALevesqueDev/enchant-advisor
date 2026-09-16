@@ -1283,3 +1283,48 @@ a hidden `<option>` in several other selects on this one-page layout —
 text search would be ambiguous; ID existence isn't.
 
 Bumped to v1.16.0 (new feature).
+
+## Bug: an installed (Add to Home Screen) copy never picked up new deploys (v1.16.1)
+
+Real user report: "Pourquoi es ce que si j'enregistre mon app enchant
+advisor elle ne s'update pas avec nos push." First checked whether this
+was a repeat of v1.13.1's stale-cache bug — it wasn't: curled the live
+`/sw.js` directly and confirmed it already correctly embeds the current
+`CACHE_NAME` (`enchant-advisor-v1.16.0` at the time) with a proper
+`Cache-Control: no-cache` header, so the deploy pipeline itself was
+fine.
+
+The real gap was client-side, in `ServiceWorkerRegister.tsx`, and is
+well-documented Service Worker spec behavior once looked for: the
+browser only re-checks sw.js for a new version on a full navigation to
+an in-scope page. A `display: "standalone"` installed PWA (this app's
+own `manifest.ts` setting) is usually just RESUMED from the background
+by the OS when reopened, not freshly navigated to — so that check
+rarely fired in practice, even though sw.js's own `install`/`activate`
+handlers already call `self.skipWaiting()` + `self.clients.claim()`
+correctly. And even on the rare case a new worker DID activate in the
+background, nothing told the already-open page to reload, so its
+already-loaded JS just kept running from memory regardless.
+
+Two additions, both standard, spec-recommended patterns for exactly
+this symptom (not a new invented mechanism):
+- `registration.update()` fired on `visibilitychange` -> `"visible"` —
+  the actual moment an installed app is "relaunched" from the
+  background, so this is the natural point to force the check the
+  browser wasn't doing on its own.
+- a `navigator.serviceWorker`'s `controllerchange` listener that calls
+  `window.location.reload()` once a new worker takes control (guarded
+  by a `reloaded` flag against a double-fire), so the update actually
+  reaches what's on screen instead of silently waiting for some
+  unrelated future reload.
+
+No new stat/game-data claim here — this is Service Worker lifecycle
+behavior, verified against the spec's own update algorithm and this
+project's existing `sw.js` code, not something needing a wiki/mcmeta
+check. No e2e coverage added: simulating a real second deployment
+mid-test to exercise the update path is far more machinery than the
+fix warrants, and Playwright has no lever for "OS resumed a
+backgrounded PWA" — this is a case where the correct seam just isn't
+there, noted rather than forced.
+
+Bumped to v1.16.1 (bug fix).

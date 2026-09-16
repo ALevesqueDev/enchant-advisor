@@ -1128,6 +1128,8 @@ find the real PID and Windows' own `taskkill //F //PID`, not `pkill`.
 Worth remembering for any future "I just fixed this, why does it still
 show the old behavior locally" moment.
 
+Bumped to v1.13.1 (bug fix).
+
 ## Anvil simulator: either slot can be a book or the chosen item (v1.14.0)
 
 User report: "Le anvil devrais pouvoir être deux livre dans chaque
@@ -1211,4 +1213,73 @@ real max level is III, not V; fixed to use valid levels 1-3.)
 
 Bumped to v1.15.0 (new feature).
 
-Bumped to v1.13.1 (bug fix).
+## Stats Calculator: generic per-item enchantment lists for Tool and Armor (v1.16.0)
+
+Direct follow-up user report, the same day v1.15.0 shipped, after actually
+seeing it live: "Chaque item outil ou pièce armure dans le jeux peux
+avoir plus de 1 enchantement alors que l'app me permet d'en ajouter un
+seul, ce n'est donc pas satisfaisant comme résultat." Two things were
+going on:
+
+1. **The v1.14.0/v1.15.0 commits were never pushed.** `git push` had
+   never run — enchant-advisor.vercel.app was still serving v1.13.1
+   (verified by curling the live site and grep'ing its embedded version
+   string), so the user's very first complaint ("un seul champ") was
+   literally true of what they could see. Pushed immediately
+   (`git push origin main`) to trigger the Vercel GitHub-integration
+   redeploy, confirmed live at v1.15.0 before writing any new code.
+2. **v1.15.0's fix (Efficiency+Unbreaking / Protection+Unbreaking, 2
+   fixed fields) was still short of the real game**, which allows a
+   pickaxe to also carry Fortune or Silk Touch, and armor to carry
+   Thorns, curses, Mending, and slot-specific enchants (Respiration/
+   Aqua Affinity on a helmet; Feather Falling/Depth Strider/Frost
+   Walker/Soul Speed on boots; Swift Sneak on leggings) — all at once.
+   Confirmed via AskUserQuestion: the user wants the generic "add
+   any applicable enchantment" pattern the anvil simulator already
+   uses, not more hardcoded fields.
+
+**Fix**: new `EnchantListEditor` component (`StatsMode.tsx`) replaces
+both the Tool section's fixed Efficiency/Unbreaking pair and each Armor
+piece's fixed Protection/Unbreaking pair with a real per-item list —
+`enchantmentsFor(category)` for the addable pool, `incompatibleWith`
+(the same real `exclusive_set`-derived data the anvil simulator
+trusts) to keep e.g. Protection vs. Fire Protection or Fortune vs. Silk
+Touch mutually exclusive, exactly like the real game. Adding an
+enchantment defaults it to its own max level, matching every other
+select in this app's own convention of defaulting to a real, non-empty
+example value; removing one deletes it from the list outright (no more
+"level 0 = none" — absence from the list IS none, a closer match to how
+items actually work).
+
+State shape changed accordingly: `toolEnchants: EnchantEntry[]`
+(default `[{efficiency: 5}]`, the same starting example as before) and
+`armorEnchants: Partial<Record<ArmorSlot, EnchantEntry[]>>` (per piece,
+still independent per slot, same reasoning as v1.15.0's per-piece
+Unbreaking). The specific computed stats this app already knows how to
+calculate (Efficiency's mining speed, Unbreaking's save chance,
+Protection's EPF-based damage reduction) are derived by reading the
+matching entry back out of the list (`findLevel()`); every other
+addable enchantment (Fortune, Silk Touch, Thorns, Mending, the curses,
+the slot-specific movement/utility ones) shows in the list as applied
+but deliberately renders no fabricated stat tile — this app has no
+verified formula for them (no loot-value or fall-damage/underwater-
+speed model exists here), and inventing one under time pressure would
+violate this project's own verify-before-shipping standard. Scoped to
+Tool and Armor only, matching exactly what the user named ("outil ou
+pièce armure") — the weapon and ranged sections keep their existing
+fixed-field design for now.
+
+e2e coverage rewritten: the old fixed-select ids (`#stats-efficiency-
+select`, `#stats-*-protection-select`, `#stats-*-unbreaking-select`)
+no longer exist, replaced by `#stats-<item>-add-select` (the generic
+add dropdown) and `#stats-<item>-<enchantId>-level` (each entry's own
+level select) — both e2e tests updated to drive the new flow, plus a
+new test confirming 3+ simultaneous non-conflicting enchantments
+coexist on one item and that adding Fortune removes Silk Touch from
+what can still be added (real exclusivity enforced in the UI, not just
+in the anvil). Assertions deliberately check element IDs rather than
+page text for enchantment names, since a translated name can appear as
+a hidden `<option>` in several other selects on this one-page layout —
+text search would be ambiguous; ID existence isn't.
+
+Bumped to v1.16.0 (new feature).

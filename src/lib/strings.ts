@@ -70,6 +70,12 @@ const UI = {
   statsSweepingEdgeLabel: { en: "Sweeping Edge", fr: "Tranchant balayé" },
   statsFireAspectLabel: { en: "Fire Aspect", fr: "Feu ardent" },
   statsUnbreakingLabel: { en: "Unbreaking", fr: "Solidité" },
+  // The generic per-item enchantment list (EnchantListEditor) -- any Tool
+  // or Armor piece can carry as many compatible enchantments as the real
+  // game allows, not a fixed couple of hardcoded fields.
+  statsAddEnchantLabel: { en: "Add an enchantment", fr: "Ajouter un enchantement" },
+  statsAddEnchantPlaceholder: { en: "Choose an enchantment…", fr: "Choisir un enchantement…" },
+  statsRemoveEnchantLabel: { en: "Remove", fr: "Retirer" },
   statsComingSoonBadge: { en: "Coming soon", fr: "Bientôt" },
   statsToolSlotLabel: { en: "Tool", fr: "Outil" },
   statsMiningHeader: { en: "Mining speed", fr: "Vitesse de minage" },

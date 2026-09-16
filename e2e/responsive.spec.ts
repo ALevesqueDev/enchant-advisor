@@ -228,11 +228,11 @@ test("stats mode computes live mining break time", async ({ page }) => {
   const obsidianTime = page.locator("text=Obsidienne").locator("..").locator(".accent-text");
   const before = await obsidianTime.textContent();
 
-  // Dropping Efficiency from its default (V) to none is a big enough speed
-  // swing to visibly change obsidian's break time even through the
-  // formula's whole-tick rounding (small swings, e.g. just switching
-  // material, can round to the same displayed tick count).
-  await page.locator("#stats-efficiency-select").selectOption("0");
+  // Removing Efficiency entirely (the generic EnchantListEditor's "back to
+  // none" affordance -- there's no 0-level option anymore, absence from
+  // the list IS none) is a big enough speed swing to visibly change
+  // obsidian's break time even through the formula's whole-tick rounding.
+  await page.getByRole("button", { name: "Retirer Efficacité" }).click();
   await expect(obsidianTime).not.toHaveText(before ?? "");
 });
 
@@ -250,14 +250,17 @@ test("stats mode computes live armor damage reduction across all 4 slots", async
   const before = await genericReduction.textContent();
   expect(before).toBe("0%");
 
+  // Adding "protection" from the generic add-enchantment select applies it
+  // at its own max level (IV) by default, same as every other section's
+  // "add" default.
   await page.locator("#stats-helmet-select").selectOption("diamond");
-  await page.locator("#stats-helmet-protection-select").selectOption("protection:4");
+  await page.locator("#stats-helmet-add-select").selectOption("protection");
   await page.locator("#stats-chestplate-select").selectOption("diamond");
-  await page.locator("#stats-chestplate-protection-select").selectOption("protection:4");
+  await page.locator("#stats-chestplate-add-select").selectOption("protection");
   await page.locator("#stats-leggings-select").selectOption("diamond");
-  await page.locator("#stats-leggings-protection-select").selectOption("protection:4");
+  await page.locator("#stats-leggings-add-select").selectOption("protection");
   await page.locator("#stats-boots-select").selectOption("diamond");
-  await page.locator("#stats-boots-protection-select").selectOption("protection:4");
+  await page.locator("#stats-boots-add-select").selectOption("protection");
 
   // Full diamond (20 armor points) alone already gives the well-known 80%
   // typical-hit reduction -- combined with Protection IV x4's EPF, the
@@ -306,37 +309,69 @@ test("stats mode computes live ranged enchant bonuses", async ({ page }) => {
   await expect(page.getByText("+3.0")).toBeVisible();
 });
 
-// Regression coverage for the fix requested directly by the user
-// (2026-09-15): "Aussi dans le calculateur de Stats il faudrait pouvoir
-// avoir... plus enchantements" -- the Tool (pickaxe) section previously
-// only had Efficiency, no Unbreaking. Unbreaking level 3 gives a known
-// save chance of 3/4 = 75% (unbreakingSaveChance's own linear formula).
-test("stats mode's tool section now supports Unbreaking, not just Efficiency", async ({ page }) => {
+// Regression coverage for the follow-up user report (2026-09-16): "Chaque
+// item outil ou pièce armure dans le jeux peux avoir plus de 1
+// enchantement" -- a fixed Efficiency+Unbreaking pair still wasn't
+// enough. The Tool (pickaxe) section now uses a generic, anvil-style
+// add-any-applicable-enchantment list (EnchantListEditor): confirm 3
+// simultaneous, non-conflicting enchantments coexist (Efficiency, the
+// default, plus Unbreaking and Fortune added on top), and that adding
+// Fortune removes its real mutually-exclusive pair (Silk Touch) from
+// what can still be added -- same incompatibleWith data the anvil
+// simulator already trusts.
+test("stats mode's tool section lets 3+ enchantments coexist and respects real exclusivity", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Calculateur de statistiques" }).click();
   await page.getByText("Vitesse de minage").waitFor();
 
-  await page.locator("#stats-tool-unbreaking-select").selectOption("3");
+  await page.locator("#stats-tool-add-select").selectOption("unbreaking");
+  await page.locator("#stats-tool-add-select").selectOption("fortune");
+
+  // Each entry's own per-item level select existing (rather than a page
+  // text search, which would also match the same enchant name as a hidden
+  // <option> in unrelated selects elsewhere on this one-page layout) is
+  // the real proof all 3 now coexist -- Efficiency was already the default.
+  await expect(page.locator("#stats-tool-efficiency-level")).toBeVisible();
+  await expect(page.locator("#stats-tool-unbreaking-level")).toBeVisible();
+  await expect(page.locator("#stats-tool-fortune-level")).toBeVisible();
+  // Unbreaking was added at its own max level (III) by default -> 3/4 = 75%.
   await expect(page.getByText("75%")).toBeVisible();
+
+  const addOptions = await page.locator("#stats-tool-add-select option").allTextContents();
+  expect(addOptions.some((label) => label.includes("Toucher de soie"))).toBe(false);
 });
 
 // Same fix, armor side: each of the 4 pieces now carries its own
-// Unbreaking level independently (a real loadout can have a fresh helmet
+// independent enchantment list (a real loadout can have a fresh helmet
 // next to a heavily-enchanted chestplate) -- confirm two different
-// pieces at two different levels both show their own distinct tile
-// (level 1 -> 1/2 = 50%, level 2 -> 2/3 = 67%; Unbreaking's real max
-// level is III), proving they don't share one shared state var.
-test("stats mode's armor pieces each support their own independent Unbreaking level", async ({ page }) => {
+// pieces can each carry Unbreaking at two different levels at once
+// (level 1 -> 1/2 = 50%, default max level III -> 3/4 = 75%), proving
+// they don't share state, and that a piece can carry Protection AND
+// Unbreaking AND Thorns simultaneously (3 real, non-conflicting
+// enchantments on one item), not just the previous fixed 2.
+test("stats mode's armor pieces each support several independent, simultaneous enchantments", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 1400 });
   await page.goto("/");
   await page.getByRole("button", { name: "Calculateur de statistiques" }).click();
   await page.getByText("Armure (coup typique)").waitFor();
 
-  await page.locator("#stats-helmet-unbreaking-select").selectOption("1");
-  await page.locator("#stats-boots-unbreaking-select").selectOption("2");
+  await page.locator("#stats-helmet-add-select").selectOption("unbreaking");
+  await page.locator("#stats-helmet-unbreaking-level").selectOption("1");
+  await page.locator("#stats-helmet-add-select").selectOption("protection");
+  await page.locator("#stats-helmet-add-select").selectOption("thorns");
 
-  await expect(page.getByText("50%")).toBeVisible();
-  await expect(page.getByText("67%")).toBeVisible();
+  await page.locator("#stats-boots-add-select").selectOption("unbreaking");
+
+  // Same reasoning as the tool test above -- ID existence, not a page
+  // text search, is what actually proves 3 enchantments coexist on one
+  // piece without ambiguity from identically-named options elsewhere.
+  await expect(page.locator("#stats-helmet-unbreaking-level")).toBeVisible();
+  await expect(page.locator("#stats-helmet-protection-level")).toBeVisible();
+  await expect(page.locator("#stats-helmet-thorns-level")).toBeVisible();
+  await expect(page.locator("#stats-boots-unbreaking-level")).toBeVisible();
+
+  await expect(page.getByText("50%")).toBeVisible(); // helmet, level 1
+  await expect(page.getByText("75%")).toBeVisible(); // boots, default max level III
 });
 
 // Same fix, ranged side: the bow/crossbow section previously had no

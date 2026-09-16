@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { enchantmentById } from "@/lib/enchantments";
+import { enchantmentById, enchantmentsFor } from "@/lib/enchantments";
 import { materialsFor, type Material } from "@/lib/materials";
 import { enchantmentName, itemName, bareItemName } from "@/lib/i18n";
 import { t, blockLabel, damageTypeLabel } from "@/lib/strings";
@@ -88,67 +88,100 @@ function ArmorSlotSelect({
 
 const PROTECTION_ENCHANT_IDS: ProtectionEnchantId[] = ["protection", "fire_protection", "blast_protection", "projectile_protection"];
 
-/**
- * One armor slot's Protection-family enchant + level, as a single combined
- * dropdown (not a separate enchant-then-level pair) to keep 4 already-busy
- * armor-slot rows from doubling in control count -- the 4 Protection
- * types are mutually exclusive on one item anyway (enchantments.ts's own
- * EXCLUSIVE_SETS), so "pick one enchant+level" is the whole real choice.
- */
-function ArmorProtectionSelect({
-  id,
-  value,
-  onChange,
-  locale,
-}: {
-  id: string;
-  value: ArmorPieceEnchant | undefined;
-  onChange: (enchant: ArmorPieceEnchant | undefined) => void;
-  locale: Locale;
-}) {
-  const encoded = value ? `${value.enchantId}:${value.level}` : "none";
-  return (
-    <LabeledSelect
-      id={id}
-      label={t("statsDamageEnchantLabel", locale)}
-      value={encoded}
-      onChange={(e) => {
-        if (e.target.value === "none") {
-          onChange(undefined);
-          return;
-        }
-        const [enchantId, levelStr] = e.target.value.split(":");
-        onChange({ enchantId: enchantId as ProtectionEnchantId, level: Number(levelStr) });
-      }}
-      fullWidth
-    >
-      <option value="none">{t("noneOption", locale)}</option>
-      {PROTECTION_ENCHANT_IDS.map((enchantId) =>
-        Array.from({ length: enchantmentById(enchantId).maxLevel }, (_, i) => i + 1).map((lvl) => (
-          <option key={`${enchantId}:${lvl}`} value={`${enchantId}:${lvl}`}>
-            {enchantmentName(enchantId, locale)} {lvl}
-          </option>
-        ))
-      )}
-    </LabeledSelect>
-  );
+/** One (enchantment, level) pair inside an EnchantListEditor's list. */
+export interface EnchantEntry {
+  enchantId: string;
+  level: number;
+}
+
+/** The level of a specific enchantment within a list, or 0 if it isn't there -- the bridge between the generic list and the specific computed stats (Efficiency, Unbreaking, Protection) that read off of it. */
+function findLevel(entries: EnchantEntry[] | undefined, enchantId: string): number {
+  return entries?.find((e) => e.enchantId === enchantId)?.level ?? 0;
 }
 
 /**
- * One armor slot's Unbreaking level -- separate from ArmorProtectionSelect
- * since a piece's durability and its damage reduction are independent real
- * enchants (both can be on the same piece at once, unlike the mutually
- * exclusive Protection family).
+ * A per-item enchantment list -- lets a Tool or Armor piece carry as many
+ * simultaneous, mutually-compatible enchantments as the real game allows,
+ * instead of a fixed couple of hardcoded fields. Real user report
+ * (2026-09-16): "Chaque item outil ou pièce armure... peux avoir plus de 1
+ * enchantement" -- the previous design (one Efficiency/Protection field +
+ * one Unbreaking field) didn't match that. Reuses exactly the same
+ * category-filtered pool and incompatibleWith exclusivity data the anvil
+ * simulator already trusts (enchantments.ts's real exclusive_set groups),
+ * so e.g. Protection and Fire Protection, or Fortune and Silk Touch, can
+ * never both be added to the same item here either.
  */
-function ArmorUnbreakingSelect({ id, value, onChange, locale }: { id: string; value: number; onChange: (level: number) => void; locale: Locale }) {
+function EnchantListEditor({
+  idPrefix,
+  category,
+  entries,
+  onChange,
+  locale,
+}: {
+  idPrefix: string;
+  category: ItemCategory;
+  entries: EnchantEntry[];
+  onChange: (entries: EnchantEntry[]) => void;
+  locale: Locale;
+}) {
+  const applicable = enchantmentsFor(category);
+  const usedIds = new Set(entries.map((e) => e.enchantId));
+  const addable = applicable.filter(
+    (e) => !usedIds.has(e.id) && !entries.some((entry) => enchantmentById(entry.enchantId).incompatibleWith.includes(e.id))
+  );
+
+  function addEntry(enchantId: string) {
+    if (!enchantId) return;
+    // Defaults to the enchant's own max level -- matches how every other
+    // select in this app defaults to a real, non-empty example value.
+    onChange([...entries, { enchantId, level: enchantmentById(enchantId).maxLevel }]);
+  }
+  function removeEntry(enchantId: string) {
+    onChange(entries.filter((e) => e.enchantId !== enchantId));
+  }
+  function updateLevel(enchantId: string, level: number) {
+    onChange(entries.map((e) => (e.enchantId === enchantId ? { ...e, level } : e)));
+  }
+
   return (
-    <LabeledSelect id={id} label={t("statsUnbreakingLabel", locale)} value={value} onChange={(e) => onChange(Number(e.target.value))} fullWidth>
-      {Array.from({ length: enchantmentById("unbreaking").maxLevel + 1 }, (_, i) => i).map((lvl) => (
-        <option key={lvl} value={lvl}>
-          {lvl === 0 ? t("noneOption", locale) : lvl}
-        </option>
+    <div className="space-y-1.5">
+      {entries.map((entry) => (
+        <div key={entry.enchantId} className="flex items-center gap-1.5 rounded-md bg-[var(--surface-raised)] px-2 py-1.5 text-sm">
+          <span className="flex-1 truncate">{enchantmentName(entry.enchantId, locale)}</span>
+          <select
+            id={`${idPrefix}-${entry.enchantId}-level`}
+            value={entry.level}
+            onChange={(e) => updateLevel(entry.enchantId, Number(e.target.value))}
+            aria-label={`${enchantmentName(entry.enchantId, locale)} — ${t("levelPrefix", locale)}`}
+            className="rounded border border-[var(--surface-border)] bg-[var(--background)] px-1 py-0.5 text-xs"
+          >
+            {Array.from({ length: enchantmentById(entry.enchantId).maxLevel }, (_, i) => i + 1).map((lvl) => (
+              <option key={lvl} value={lvl}>
+                {lvl}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => removeEntry(entry.enchantId)}
+            aria-label={`${t("statsRemoveEnchantLabel", locale)} ${enchantmentName(entry.enchantId, locale)}`}
+            className="shrink-0 px-1 text-muted hover:text-foreground"
+          >
+            ×
+          </button>
+        </div>
       ))}
-    </LabeledSelect>
+      {addable.length > 0 && (
+        <LabeledSelect id={`${idPrefix}-add-select`} label={t("statsAddEnchantLabel", locale)} value="" onChange={(e) => addEntry(e.target.value)} fullWidth>
+          <option value="">{t("statsAddEnchantPlaceholder", locale)}</option>
+          {addable.map((e) => (
+            <option key={e.id} value={e.id}>
+              {enchantmentName(e.id, locale)}
+            </option>
+          ))}
+        </LabeledSelect>
+      )}
+    </div>
   );
 }
 
@@ -163,14 +196,14 @@ export default function StatsMode() {
   const [fireLevel, setFireLevel] = useState(0);
   const [unbreakingLevel, setUnbreakingLevel] = useState(0);
   const [toolMaterial, setToolMaterial] = useState<Material>("diamond");
-  const [efficiencyLevel, setEfficiencyLevel] = useState(5);
-  const [toolUnbreakingLevel, setToolUnbreakingLevel] = useState(0);
+  // A real, non-empty starting example (Efficiency V), same as every other
+  // section's default -- EnchantListEditor lets more be added on top.
+  const [toolEnchants, setToolEnchants] = useState<EnchantEntry[]>([{ enchantId: "efficiency", level: 5 }]);
   const [armor, setArmor] = useState<ArmorLoadout>({});
-  const [armorProtection, setArmorProtection] = useState<Partial<Record<ArmorSlot, ArmorPieceEnchant>>>({});
-  // Per-piece, like armorProtection -- each of the 4 pieces carries its own
-  // durability independently, so a single shared level wouldn't represent a
-  // real loadout (e.g. a fresh helmet next to a heavily-Unbreaking chestplate).
-  const [armorUnbreaking, setArmorUnbreaking] = useState<Partial<Record<ArmorSlot, number>>>({});
+  // Per-piece, per-item enchant list -- each of the 4 pieces carries its own
+  // enchantments independently, so a shared list wouldn't represent a real
+  // loadout (e.g. a fresh helmet next to a heavily-enchanted chestplate).
+  const [armorEnchants, setArmorEnchants] = useState<Partial<Record<ArmorSlot, EnchantEntry[]>>>({});
   const [powerLevel, setPowerLevel] = useState(0);
   const [infinityOn, setInfinityOn] = useState(false);
   const [piercingLevel, setPiercingLevel] = useState(0);
@@ -330,6 +363,8 @@ export default function StatsMode() {
   const burn = fireAspectSeconds(fireLevel);
   const durabilitySave = unbreakingSaveChance(unbreakingLevel);
 
+  const efficiencyLevel = findLevel(toolEnchants, "efficiency");
+  const toolUnbreakingLevel = findLevel(toolEnchants, "unbreaking");
   const miningSpeed = efficiencySpeedMultiplier(toolBaseSpeed(toolMaterial), efficiencyLevel);
   const toolDurabilitySave = unbreakingSaveChance(toolUnbreakingLevel);
   const rangedDurabilitySave = unbreakingSaveChance(rangedUnbreakingLevel);
@@ -343,7 +378,14 @@ export default function StatsMode() {
   );
   const armorReduction = armorReductionTypicalPercent(totalArmorPoints);
   const DAMAGE_TYPES: DamageType[] = ["generic", "fire", "blast", "projectile"];
-  const protectionPieces = ARMOR_SLOTS.map((slot) => armorProtection[slot]);
+  // At most one Protection-family entry can ever be in a slot's list --
+  // EnchantListEditor's own incompatibleWith filtering already enforces
+  // that (real exclusive_set data), so .find() here is safe.
+  function protectionEntry(slot: ArmorSlot): ArmorPieceEnchant | undefined {
+    const found = (armorEnchants[slot] ?? []).find((e) => (PROTECTION_ENCHANT_IDS as string[]).includes(e.enchantId));
+    return found ? { enchantId: found.enchantId as ProtectionEnchantId, level: found.level } : undefined;
+  }
+  const protectionPieces = ARMOR_SLOTS.map((slot) => protectionEntry(slot));
   const finalReductionByType = Object.fromEntries(
     DAMAGE_TYPES.map((type) => {
       const epf = totalEpf(protectionPieces, type);
@@ -498,7 +540,7 @@ export default function StatsMode() {
             </LabeledSelect>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-3 border-t border-[var(--surface-border)] pt-3">
+          <div className="mt-3 flex flex-wrap items-start gap-3 border-t border-[var(--surface-border)] pt-3">
             <LabeledSelect
               id="stats-tool-material-select"
               label={`${t("statsToolSlotLabel", locale)} (${bareItemName("pickaxe", locale)})`}
@@ -511,30 +553,9 @@ export default function StatsMode() {
                 </option>
               ))}
             </LabeledSelect>
-            <LabeledSelect
-              id="stats-efficiency-select"
-              label={t("statsEfficiencyLabel", locale)}
-              value={efficiencyLevel}
-              onChange={(e) => setEfficiencyLevel(Number(e.target.value))}
-            >
-              {Array.from({ length: enchantmentById("efficiency").maxLevel + 1 }, (_, i) => i).map((lvl) => (
-                <option key={lvl} value={lvl}>
-                  {lvl === 0 ? t("noneOption", locale) : lvl}
-                </option>
-              ))}
-            </LabeledSelect>
-            <LabeledSelect
-              id="stats-tool-unbreaking-select"
-              label={t("statsUnbreakingLabel", locale)}
-              value={toolUnbreakingLevel}
-              onChange={(e) => setToolUnbreakingLevel(Number(e.target.value))}
-            >
-              {Array.from({ length: enchantmentById("unbreaking").maxLevel + 1 }, (_, i) => i).map((lvl) => (
-                <option key={lvl} value={lvl}>
-                  {lvl === 0 ? t("noneOption", locale) : lvl}
-                </option>
-              ))}
-            </LabeledSelect>
+            <div className="min-w-[220px] flex-1">
+              <EnchantListEditor idPrefix="stats-tool" category="pickaxe" entries={toolEnchants} onChange={setToolEnchants} locale={locale} />
+            </div>
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -546,16 +567,11 @@ export default function StatsMode() {
                 onChange={(m) => setArmor((a) => ({ ...a, helmet: m }))}
                 locale={locale}
               />
-              <ArmorProtectionSelect
-                id="stats-helmet-protection-select"
-                value={armorProtection.helmet}
-                onChange={(v) => setArmorProtection((a) => ({ ...a, helmet: v }))}
-                locale={locale}
-              />
-              <ArmorUnbreakingSelect
-                id="stats-helmet-unbreaking-select"
-                value={armorUnbreaking.helmet ?? 0}
-                onChange={(lvl) => setArmorUnbreaking((a) => ({ ...a, helmet: lvl }))}
+              <EnchantListEditor
+                idPrefix="stats-helmet"
+                category="helmet"
+                entries={armorEnchants.helmet ?? []}
+                onChange={(entries) => setArmorEnchants((a) => ({ ...a, helmet: entries }))}
                 locale={locale}
               />
             </div>
@@ -567,16 +583,11 @@ export default function StatsMode() {
                 onChange={(m) => setArmor((a) => ({ ...a, chestplate: m }))}
                 locale={locale}
               />
-              <ArmorProtectionSelect
-                id="stats-chestplate-protection-select"
-                value={armorProtection.chestplate}
-                onChange={(v) => setArmorProtection((a) => ({ ...a, chestplate: v }))}
-                locale={locale}
-              />
-              <ArmorUnbreakingSelect
-                id="stats-chestplate-unbreaking-select"
-                value={armorUnbreaking.chestplate ?? 0}
-                onChange={(lvl) => setArmorUnbreaking((a) => ({ ...a, chestplate: lvl }))}
+              <EnchantListEditor
+                idPrefix="stats-chestplate"
+                category="chestplate"
+                entries={armorEnchants.chestplate ?? []}
+                onChange={(entries) => setArmorEnchants((a) => ({ ...a, chestplate: entries }))}
                 locale={locale}
               />
             </div>
@@ -588,16 +599,11 @@ export default function StatsMode() {
                 onChange={(m) => setArmor((a) => ({ ...a, leggings: m }))}
                 locale={locale}
               />
-              <ArmorProtectionSelect
-                id="stats-leggings-protection-select"
-                value={armorProtection.leggings}
-                onChange={(v) => setArmorProtection((a) => ({ ...a, leggings: v }))}
-                locale={locale}
-              />
-              <ArmorUnbreakingSelect
-                id="stats-leggings-unbreaking-select"
-                value={armorUnbreaking.leggings ?? 0}
-                onChange={(lvl) => setArmorUnbreaking((a) => ({ ...a, leggings: lvl }))}
+              <EnchantListEditor
+                idPrefix="stats-leggings"
+                category="leggings"
+                entries={armorEnchants.leggings ?? []}
+                onChange={(entries) => setArmorEnchants((a) => ({ ...a, leggings: entries }))}
                 locale={locale}
               />
             </div>
@@ -609,16 +615,11 @@ export default function StatsMode() {
                 onChange={(m) => setArmor((a) => ({ ...a, boots: m }))}
                 locale={locale}
               />
-              <ArmorProtectionSelect
-                id="stats-boots-protection-select"
-                value={armorProtection.boots}
-                onChange={(v) => setArmorProtection((a) => ({ ...a, boots: v }))}
-                locale={locale}
-              />
-              <ArmorUnbreakingSelect
-                id="stats-boots-unbreaking-select"
-                value={armorUnbreaking.boots ?? 0}
-                onChange={(lvl) => setArmorUnbreaking((a) => ({ ...a, boots: lvl }))}
+              <EnchantListEditor
+                idPrefix="stats-boots"
+                category="boots"
+                entries={armorEnchants.boots ?? []}
+                onChange={(entries) => setArmorEnchants((a) => ({ ...a, boots: entries }))}
                 locale={locale}
               />
             </div>
@@ -810,15 +811,15 @@ export default function StatsMode() {
             </div>
           ))}
         </div>
-        {ARMOR_SLOTS.some((slot) => (armorUnbreaking[slot] ?? 0) > 0) && (
+        {ARMOR_SLOTS.some((slot) => findLevel(armorEnchants[slot], "unbreaking") > 0) && (
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {ARMOR_SLOTS.filter((slot) => (armorUnbreaking[slot] ?? 0) > 0).map((slot) => (
+            {ARMOR_SLOTS.filter((slot) => findLevel(armorEnchants[slot], "unbreaking") > 0).map((slot) => (
               <div key={slot} className="rounded-lg bg-[var(--surface-raised)] p-3">
                 <div className="text-xs text-muted">
                   {bareItemName(slot, locale)} · {t("statsDurabilitySaveLabel", locale)}
                 </div>
                 <div className="font-display accent-text mt-1 text-2xl font-bold">
-                  {(unbreakingSaveChance(armorUnbreaking[slot]!) * 100).toFixed(0)}%
+                  {(unbreakingSaveChance(findLevel(armorEnchants[slot], "unbreaking")) * 100).toFixed(0)}%
                 </div>
               </div>
             ))}
